@@ -153,10 +153,10 @@ rast2poly <- function(x,
 get_utm <- function(x, y) {
 
   ## check inputs
-  if (x < -180 | x > 180)
+  if (x < -180 || x > 180)
     stop("Invalid value in x")
 
-  if (y < -90 | y > 90)
+  if (y < -90 || y > 90)
     stop("Invalid value in y")
 
   ## x - longitude
@@ -167,7 +167,7 @@ get_utm <- function(x, y) {
   zone <- which.min(abs(x - x_med))
 
   ## exception
-  if (y >= 56 & y < 64 & x >= 0 & x < 6) {
+  if (y >= 56 && y < 64 && x >= 0 && x < 6) {
     zone <- 32
   }
 
@@ -211,8 +211,8 @@ point2utm <- function(point) {
   if (!inherits(point, "sf"))
     stop("'point' must be class 'sf'")
 
-  v_x <- sf::st_coordinates(point)[,1]
-  v_y <- sf::st_coordinates(point)[,2]
+  v_x <- sf::st_coordinates(point)[, 1]
+  v_y <- sf::st_coordinates(point)[, 2]
 
   cout <- sapply(seq_len(length(v_x)), function(i) {
     get_utm(x = v_x[i], y = v_y[i])
@@ -220,3 +220,4 @@ point2utm <- function(point) {
 
   return(cout)
 }
+
