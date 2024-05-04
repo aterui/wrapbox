@@ -11,7 +11,7 @@ get_tf(data, shape, mode)
 This object must list the maximum and minimum of coordinates
 (latitude or longitude)}
 
-\item{shape}{\code{sf} polygon object.
+\item{shape}{Polygon object of class \code{sf}.
 This object defines the extent.}
 
 \item{mode}{Character.

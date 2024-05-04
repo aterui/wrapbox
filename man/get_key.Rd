@@ -2,19 +2,19 @@
 % Please edit documentation in R/wrapbox.R
 \name{get_key}
 \alias{get_key}
-\title{Return file name keys for MERITHYDRO rasters}
+\title{Return file name keys for MERIT Hydro rasters}
 \usage{
 get_key(shape)
 }
 \arguments{
-\item{shape}{\code{sf} polygon object.
+\item{shape}{Polygon object of class \code{sf}.
 This object defines the extent.}
 }
 \description{
-Return file name keys for MERITHYDRO rasters
+Return file name keys for MERIT Hydro rasters
 }
-\section{MERITHYDRO}{
- https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/
+\section{MERIT Hydro}{
+ see https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/
 }
 
 \author{

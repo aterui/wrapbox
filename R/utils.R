@@ -3,7 +3,7 @@
 #' @param data Dataframe.
 #'  This object must list the maximum and minimum of coordinates
 #'  (latitude or longitude)
-#' @param shape \code{sf} polygon object.
+#' @param shape Polygon object of class \code{sf}.
 #'  This object defines the extent.
 #' @param mode Character.
 #'  This argument specifies which terminal coordinate of the shape polygon
