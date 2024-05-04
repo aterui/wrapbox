@@ -138,3 +138,62 @@ rast2poly <- function(x,
 
   return(poly)
 }
+
+#' Return UTM zone (EPSG code) based on geographic coordinates
+#'
+#' @param x Numeric.
+#'  Longitude coordinate.
+#' @param y Numeric.
+#'  Latitude coordinate.
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
+
+get_utm <- function(x, y) {
+
+  ## check inputs
+  if (x < -180 | x > 180)
+    stop("Invalid value in x")
+
+  if (y < -90 | y > 90)
+    stop("Invalid value in y")
+
+  ## x - longitude
+  x0 <- seq(-180, 180, by = 6)
+  x_med <- x0 + 3
+
+  ## find the nearest center UTM
+  zone <- which.min(abs(x - x_med))
+
+  ## exception
+  if (y >= 56 & y < 64 & x >= 0 & x < 6) {
+    zone <- 32
+  }
+
+  if (y > 0) {
+
+    ## epsg code for northern hemisphere
+    if (y < 60) {
+      ## non-pole zone
+      epsg <- 32600 + zone
+    } else {
+      ## pole zone
+      epsg <- 32661
+    }
+
+  } else {
+
+    ## epsg code for southern hemisphere
+    if (y >= -60) {
+      ## non-pole zone
+      epsg <- 32700 + zone
+    } else {
+      ## pole zone
+      epsg <- 32761
+    }
+
+  }
+
+  return(epsg)
+}
