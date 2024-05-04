@@ -1,8 +1,9 @@
-#' Return file name keys for MERITHYDRO rasters
+#' Return file name keys for MERIT Hydro rasters
 #'
 #' @inheritParams get_tf
 #'
-#' @section MERITHYDRO: https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/
+#' @section
+#'  MERIT Hydro: see https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
 #'
@@ -68,4 +69,37 @@ get_key <- function(shape) {
   key <- paste(z, collapse = "|")
 
   return(key)
+}
+
+#' Convert ArcGIS flow direction to D8 flow direction
+#'
+#' @param x Flow direction raster of class \code{SpatRaster}
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
+
+arc2d8 <- function(x) {
+  ## whitebox uses flow pointer D8
+  # 64, 128,  1
+  # 32,   0,  2
+  # 16,   8,  4
+
+  ## ArcGIS uses D8 algorithm
+  # 32, 64, 128
+  # 16,  0,   1
+  #  8,  4,   2
+
+  # check class()
+  if (!inherits(x, "SpatRaster")) stop("Provide data in class 'SpatRaster'")
+
+  # begin with northeast through north
+  fdir_arc <- as.integer(c(0, 2^(0:7), 247, 255))
+  fdir_d8 <- as.integer(c(0, fdir_arc[3:9], fdir_arc[2], NA, NA))
+  y0 <- terra::subst(x, from = fdir_arc, to = fdir_d8)
+
+  # convert to integer just in case
+  y <- terra::as.int(y0)
+
+  return(y)
 }
