@@ -221,3 +221,161 @@ point2utm <- function(point) {
   return(cout)
 }
 
+#' Delineate unnested watersheds
+#'
+#' @param str_grid Stream grid raster of class \code{SpatRaster}.
+#' @param f_dir Flow direction raster of class \code{SpatRaster}.
+#' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
+#' @param outlet Outlet point layer of class \code{sf}.
+#' @param snap_dist Numeric.
+#'  Distance threshold for snapping points to stream grid.
+#'  Measured in the unit of input raster files.
+#' @param id_col Column name specifying outlet id.
+#'  This column information will be appended to the output polygon layer.
+#' @param export Logical.
+#'  Whether output polygons should be exported.
+#' @param output_dir Character.
+#'  Specify a directly name for output.
+#'  Ignored if \code{export = FALSE}.
+#' @param filename Character.
+#'  Specify a file name of output watershed polygons.
+#'  Ignored if \code{export = FALSE}.
+#' @param file_ext Character.
+#'  Specify a file extension of output files.
+#'  Either \code{"gpkg"} or \code{"shp"}.
+#'  Ignored if \code{export = FALSE}.
+#' @param keep_outlet Logical.
+#'  Whether a snapped outlet layer should be exported.
+#'  Ignored if \code{export = FALSE}.
+
+wsd_unnested <- function(str_grid,
+                         f_dir,
+                         f_acc,
+                         outlet,
+                         snap_dist = 5,
+                         id_col,
+                         export = TRUE,
+                         output_dir = "data_fmt",
+                         filename = "watershed",
+                         file_ext = "gpkg",
+                         keep_outlet = FALSE) {
+
+  ## temporary files
+  message("Saving temporary files...")
+  temppath <- tempdir()
+  v_name <- temppath %>%
+    paste(c("strg.tif",
+            "outlet.shp",
+            "outlet_snap.shp",
+            "upa.tif",
+            "dir.tif",
+            "wsd.tif"),
+          sep = "\\")
+
+  terra::writeRaster(str_grid,
+                     filename = v_name[str_detect(v_name, "strg")],
+                     overwrite = TRUE)
+
+  terra::writeRaster(f_dir,
+                     filename = v_name[str_detect(v_name, "dir")],
+                     overwrite = TRUE)
+
+  terra::writeRaster(f_acc,
+                     filename = v_name[str_detect(v_name, "upa")],
+                     overwrite = TRUE)
+
+  sf::st_write(outlet,
+               dsn = v_name[str_detect(v_name, "outlet.shp")],
+               append = FALSE)
+
+  ## snapping
+  message("Snap outlet points to the nearest stream grid...")
+  whitebox::wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
+                                        streams = v_name[str_detect(v_name, "strg")],
+                                        output = v_name[str_detect(v_name, "outlet_snap")],
+                                        snap_dist = snap_dist)
+
+  ## delineation
+  message("Delineate watersheds...")
+  whitebox::wbt_unnest_basins(d8_pntr = v_name[str_detect(v_name, "dir")],
+                              pour_pts = v_name[str_detect(v_name, "outlet_snap")],
+                              output = v_name[str_detect(v_name, "wsd")])
+
+  ## vectorize
+  message("Vectorize raster watersheds...")
+
+  sf_wsd <- list.files(path = temppath,
+                       pattern = "wsd",
+                       full.names = TRUE) %>%
+    lapply(terra::rast) %>%
+    lapply(stars::st_as_stars) %>%
+    lapply(sf::st_as_sf,
+           merge = TRUE,
+           as_points = FALSE) %>%
+    dplyr::bind_rows() %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(site_id = sum(dplyr::c_across(cols = ends_with("tif")),
+                                na.rm = TRUE)) %>%
+    dplyr::select(site_id) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(area = units::set_units(st_area(.), "km^2")) %>%
+    dplyr::group_by(site_id) %>%
+    dplyr::slice(which.max(area)) %>% # remove duplicates by outlet
+    dplyr::ungroup() %>%
+    dplyr::relocate(site_id, area) %>%
+    dplyr::arrange(site_id)
+
+  outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
+    dplyr::select(NULL)
+
+  if (!missing(id_col)) {
+    identifier <- outlet %>%
+      pull(id_col)
+
+    xy0 <- sf::st_coordinates(outlet)
+    xy <- sf::st_coordinates(outlet_snap)
+
+    sf_wsd <- sf_wsd %>%
+      dplyr::mutate(id_col = identifier[.$site_id],
+                    x0 = xy0[.$site_id, 1],
+                    y0 = xy0[.$site_id, 2],
+                    x = xy[.$site_id, 1],
+                    y = xy[.$site_id, 2]) %>%
+      dplyr::relocate(id_col, x, y)
+  }
+
+  if (export) {
+
+    if (!any(str_detect(list.files(".", recursive = TRUE), output_dir)))
+      dir.create(output_dir)
+
+    sf::st_write(sf_wsd,
+                 dsn = paste0(output_dir,
+                              "/",
+                              filename,
+                              ".",
+                              file_ext),
+                 append = FALSE)
+
+    if (keep_outlet) {
+
+      sf::st_write(outlet_snap,
+                   dsn = paste0(output_dir,
+                                "/",
+                                "outlet_snap",
+                                ".",
+                                file_ext),
+                   append = FALSE)
+    }
+
+  }
+
+  ## remove temporary files
+  message("Removing temporary files...")
+
+  files <- list.files(temppath, full.names = T)
+  cl <- call("file.remove", files)
+  bools <- suppressWarnings(eval(cl, envir = parent.frame()))
+
+  return(sf_wsd)
+}
