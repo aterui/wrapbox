@@ -141,9 +141,9 @@ rast2poly <- function(x,
 
 #' Return UTM zone (EPSG code) based on geographic coordinates
 #'
-#' @param x Numeric.
+#' @param x Numeric scalar.
 #'  Longitude coordinate.
-#' @param y Numeric.
+#' @param y Numeric scalar.
 #'  Latitude coordinate.
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
@@ -196,4 +196,27 @@ get_utm <- function(x, y) {
   }
 
   return(epsg)
+}
+
+#' Return UTM zone (EPSG code) based on a point layer
+#'
+#' @param point Point object of class \code{sf}.
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
+
+point2utm <- function(point) {
+
+  if (!inherits(point, "sf"))
+    stop("'point' must be class 'sf'")
+
+  v_x <- sf::st_coordinates(point)[,1]
+  v_y <- sf::st_coordinates(point)[,2]
+
+  cout <- sapply(seq_len(length(v_x)), function(i) {
+    get_utm(x = v_x[i], y = v_y[i])
+  })
+
+  return(cout)
 }
