@@ -121,6 +121,9 @@ rast2poly <- function(x,
                       simplify = TRUE,
                       keep = 0.05) {
 
+  if (keep >= 1)
+    stop("'keep' must be less than 1.0")
+
   poly_raw <- stars::st_as_stars(x) %>%
     sf::st_as_sf(merge = TRUE,
                  as_points = FALSE) %>%

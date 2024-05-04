@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{get_tf}
 \alias{get_tf}
-\title{Return the terminal cell of a given polygon}
+\title{Utility function: Return the terminal cell of a given polygon}
 \usage{
 get_tf(data, shape, mode)
 }
@@ -19,5 +19,5 @@ This argument specifies which terminal coordinate of the shape polygon
 should be used. Either \code{xmin, xmax, ymin, ymax}}
 }
 \description{
-Return the terminal cell of a given polygon
+Utility function: Return the terminal cell of a given polygon
 }

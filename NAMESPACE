@@ -3,4 +3,5 @@
 export(arc2d8)
 export(get_key)
 export(get_tf)
+export(rast2poly)
 importFrom(dplyr,"%>%")
