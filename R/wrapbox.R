@@ -103,3 +103,35 @@ arc2d8 <- function(x) {
 
   return(y)
 }
+
+#' Convert raster to polygon(s)
+#'
+#' @param x Raster of class \code{SpatRaster}
+#' @param simplify Logical.
+#'  Whether output polygons are simplified or not.
+#' @param keep Numeric.
+#'  Proportion of vertices kept after polygon simplifications.
+#'  Ignored if \code{simplify = FALSE}
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
+
+rast2poly <- function(x,
+                      simplify = TRUE,
+                      keep = 0.05) {
+
+  poly_raw <- stars::st_as_stars(x) %>%
+    sf::st_as_sf(merge = TRUE,
+                 as_points = FALSE) %>%
+    sf::st_cast(to = "MULTIPOLYGON")
+
+  if (simplify) {
+    poly <- rmapshaper::ms_simplify(poly_raw,
+                                    keep = keep)
+  } else {
+    poly <- poly_raw
+  }
+
+  return(poly)
+}
