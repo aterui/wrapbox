@@ -1,4 +1,4 @@
-#' Return the terminal cell of a given polygon
+#' Utility function: Return the terminal cell of a given polygon
 #'
 #' @param data Dataframe.
 #'  This object must list the maximum and minimum of coordinates
@@ -11,7 +11,9 @@
 #'
 #' @export
 
-get_tf <- function(data, shape, mode) {
+get_tf <- function(data,
+                   shape,
+                   mode) {
 
   choice <- c("xmin", "ymin", "xmax", "ymax")
 
