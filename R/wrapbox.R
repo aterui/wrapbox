@@ -589,12 +589,6 @@ flow2grid <- function(f_acc,
 
   strg <- terra::rast(fname[str_detect(fname, "strg")])
 
-  ## remove temporary files
-  message("Removing temporary files...")
-  files <- list.files(temppath, full.names = TRUE)
-  cl <- call("file.remove", files)
-  suppressWarnings(eval(cl, envir = parent.frame()))
-
   return(strg)
 }
 
@@ -632,7 +626,7 @@ grid2stream <- function(f_dir,
                                          d8_pntr = fname[str_detect(fname, "dir")],
                                          output = fname[str_detect(fname, "strg")])
 
-  channel <- terra::rast(fname[str_detect(fname, "channel")])
+  channel <- sf::st_read(fname[str_detect(fname, "channel")])
 
   ## remove temporary files
   message("Removing temporary files...")
