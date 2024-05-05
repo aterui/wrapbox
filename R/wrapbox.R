@@ -553,3 +553,92 @@ wsd_nested <- function(outlet,
   return(list(watershed = sf_wsd,
               outlet = outlet_snap))
 }
+
+#' Convert flow accumulation raster to stream grid
+#'
+#' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
+#' @param threshold Numeric.
+#'  Threshold value for minimum stream grid.
+#'  The unit inherits from input the flow accumulation layer.
+#'
+#' @importFrom stringr str_detect
+#' @importFrom dplyr %>%
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
+
+flow2grid <- function(f_acc,
+                      threshold) {
+
+  ## temporary file names
+  temppath <- tempdir()
+  fname <- paste0(temppath,
+                  "\\",
+                  c("upa.tif", "strg.tif"))
+
+  ## write raster input in temporary folder
+  terra::writeRaster(f_acc,
+                     filename = fname[str_detect(fname, "upa")],
+                     overwrite = TRUE)
+
+  ## stream grids
+  whitebox::wbt_extract_streams(flow_accum = fname[str_detect(fname, "upa")],
+                                output = fname[str_detect(fname, "strg")],
+                                threshold = threshold)
+
+  strg <- terra::rast(fname[str_detect(fname, "strg")])
+
+  ## remove temporary files
+  message("Removing temporary files...")
+  files <- list.files(temppath, full.names = TRUE)
+  cl <- call("file.remove", files)
+  suppressWarnings(eval(cl, envir = parent.frame()))
+
+  return(strg)
+}
+
+#' Convert stream grid to vector stream
+#'
+#' @inheritParams wsd_unnested
+#'
+#' @importFrom stringr str_detect
+#' @importFrom dplyr %>%
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
+
+grid2stream <- function(f_dir,
+                        str_grid) {
+
+  ## temporary file names
+  temppath <- tempdir()
+  fname <- paste0(temppath,
+                  "\\",
+                  c("dir.tif", "strg.tif", "channel.shp"))
+
+  ## write raster input in temporary folder
+  terra::writeRaster(f_dir,
+                     filename = fname[str_detect(fname, "dir")],
+                     overwrite = TRUE)
+
+  terra::writeRaster(str_grid,
+                     filename = fname[str_detect(fname, "strg")],
+                     overwrite = TRUE)
+
+  ## stream grids
+  whitebox::wbt_raster_streams_to_vector(streams = fname[str_detect(fname, "strg")],
+                                         d8_pntr = fname[str_detect(fname, "dir")],
+                                         output = fname[str_detect(fname, "strg")])
+
+  channel <- terra::rast(fname[str_detect(fname, "channel")])
+
+  ## remove temporary files
+  message("Removing temporary files...")
+  files <- list.files(temppath, full.names = TRUE)
+  cl <- call("file.remove", files)
+  suppressWarnings(eval(cl, envir = parent.frame()))
+
+  return(channel)
+}
