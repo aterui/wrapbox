@@ -396,7 +396,6 @@ wsd_unnested <- function(str_grid,
   return(sf_wsd)
 }
 
-
 #' Delineate nested watersheds
 #'
 #' @inheritParams wsd_unnested
@@ -409,16 +408,17 @@ wsd_unnested <- function(str_grid,
 #'
 #' @export
 
-wsd_nested <- function(f_dir,
-                       outlet,
-                       snapping = FALSE,
-                       str_grid = NULL,
+wsd_nested <- function(outlet,
+                       id_col,
+                       f_dir,
                        f_acc = NULL,
-                       snap_dist = NULL,
-                       output_dir = "data_fmt",
+                       str_grid = NULL,
+                       snapping = TRUE,
+                       snap_dist = 5,
+                       export = FALSE,
+                       output_dir = "watershed",
                        filename = "watershed",
                        file_ext = "gpkg",
-                       export = FALSE,
                        keep_outlet = FALSE) {
 
   message("Saving temporary files...")
@@ -491,6 +491,28 @@ wsd_nested <- function(f_dir,
     mutate(fid = dplyr::row_number()) %>%
     dplyr::relocate(fid)
 
+  ## append id_col to watershed polygons
+  if (!missing(id_col)) {
+    ## pull id_col as an identifier
+    identifier <- outlet %>%
+      dplyr::pull(id_col)
+
+    ## pull xy coordinates from original and snapped points
+    xy0 <- sf::st_coordinates(outlet)
+    xy <- sf::st_coordinates(outlet_snap)
+
+    ## append point coordinates to polygons
+    site_id_num <- sf_wsd$site_id
+
+    sf_wsd <- sf_wsd %>%
+      dplyr::mutate(id_col = identifier[site_id_num],
+                    x0 = xy0[site_id_num, 1],
+                    y0 = xy0[site_id_num, 2],
+                    x = xy[site_id_num, 1],
+                    y = xy[site_id_num, 2]) %>%
+      dplyr::relocate(.data$id_col, .data$x, .data$y)
+  }
+
   ## export
   if (export) {
     ### create export directory
@@ -527,5 +549,3 @@ wsd_nested <- function(f_dir,
   return(list(watershed = sf_wsd,
               outlet = outlet_snap))
 }
-
-
