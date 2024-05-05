@@ -399,6 +399,13 @@ wsd_unnested <- function(outlet,
 #' Delineate nested watersheds
 #'
 #' @inheritParams wsd_unnested
+#' @param snap Logical.
+#'  Whether snapping of outlet points should be performed.
+#' @param simplify Logical.
+#'  Whether simplify the output polygons.
+#' @param keep Numeric.
+#'  Proportion of vertices kept after polygon simplifications.
+#'  Ignored if \code{simplify = FALSE}
 #'
 #' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
@@ -413,13 +420,15 @@ wsd_nested <- function(outlet,
                        f_dir,
                        f_acc = NULL,
                        str_grid = NULL,
-                       snapping = TRUE,
+                       snap = TRUE,
                        snap_dist = 5,
                        export = FALSE,
                        output_dir = "watershed",
                        filename = "watershed",
                        file_ext = "gpkg",
-                       keep_outlet = FALSE) {
+                       keep_outlet = FALSE,
+                       simplify = TRUE,
+                       keep = 0.5) {
 
   message("Saving temporary files...")
   ## temporary file names
@@ -432,7 +441,7 @@ wsd_nested <- function(outlet,
                      "wsd.tif"))
 
   ## write temporary files
-  if (snapping) {
+  if (snap) {
     ## temporary files
     terra::writeRaster(str_grid,
                        filename = v_name[str_detect(v_name, "strg")],
@@ -462,16 +471,16 @@ wsd_nested <- function(outlet,
                        filename = v_name[str_detect(v_name, "dir")],
                        overwrite = TRUE)
 
-    st_write(outlet,
-             v_name[str_detect(v_name, "outlet_snap")],
-             append = FALSE)
+    sf::st_write(outlet,
+                 v_name[str_detect(v_name, "outlet_snap")],
+                 append = FALSE)
   }
 
   ## watershed delineation: raster output
   message("Delineate watersheds...")
-  wbt_watershed(d8_pntr = v_name[str_detect(v_name, "dir")],
-                pour_pts = v_name[str_detect(v_name, "outlet_snap")],
-                output = v_name[str_detect(v_name, "wsd")])
+  whitebox::wbt_watershed(d8_pntr = v_name[str_detect(v_name, "dir")],
+                          pour_pts = v_name[str_detect(v_name, "outlet_snap")],
+                          output = v_name[str_detect(v_name, "wsd")])
 
   ## watershed delineation: vectorize
   message("Vectorize raster watersheds...")
@@ -479,17 +488,23 @@ wsd_nested <- function(outlet,
     stars::st_as_stars() %>%
     sf::st_as_sf(merge = TRUE,
                  as_point = FALSE) %>%
-    rmapshaper::ms_simplify(keep = 0.5,
-                            sys = TRUE) %>%
     sf::st_make_valid() %>%
     dplyr::select(NULL) %>%
     dplyr::mutate(fid = dplyr::row_number()) %>%
-    dplyr::relocate(fid)
+    dplyr::relocate(.data$fid)
+
+  if (simplify) {
+    if (!(keep < 1 && keep > 0))
+      stop("'keep' must be greater than 0 and less than 1")
+
+    sf_wsd <- rmapshaper::ms_simplify(sf_wsd,
+                                      keep = keep)
+  }
 
   outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
     dplyr::select(NULL) %>%
-    mutate(fid = dplyr::row_number()) %>%
-    dplyr::relocate(fid)
+    dplyr::mutate(fid = dplyr::row_number()) %>%
+    dplyr::relocate(.data$fid)
 
   ## append id_col to watershed polygons
   if (!missing(id_col)) {
@@ -542,9 +557,9 @@ wsd_nested <- function(outlet,
 
   ## remove temporary files
   message("Removing temporary files...")
-  files <- list.files(tempdir(), full.names = T)
+  files <- list.files(tempdir(), full.names = TRUE)
   cl <- call("file.remove", files)
-  bools <- suppressWarnings(eval(cl, envir = parent.frame()))
+  suppressWarnings(eval(cl, envir = parent.frame()))
 
   return(list(watershed = sf_wsd,
               outlet = outlet_snap))
