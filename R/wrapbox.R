@@ -434,14 +434,14 @@ wsd_nested <- function(outlet,
                   sep = "\\")
 
   ## write temporary files
+  terra::writeRaster(f_dir,
+                     filename = v_name[str_detect(v_name, "dir")],
+                     overwrite = TRUE)
+
   if (snap) {
     ## temporary files
     terra::writeRaster(str_grid,
                        filename = v_name[str_detect(v_name, "strg")],
-                       overwrite = TRUE)
-
-    terra::writeRaster(f_dir,
-                       filename = v_name[str_detect(v_name, "dir")],
                        overwrite = TRUE)
 
     sf::st_write(outlet,
@@ -456,10 +456,6 @@ wsd_nested <- function(outlet,
                                           snap_dist = snap_dist)
   } else {
     ## temporary files
-    terra::writeRaster(f_dir,
-                       filename = v_name[str_detect(v_name, "dir")],
-                       overwrite = TRUE)
-
     sf::st_write(outlet,
                  v_name[str_detect(v_name, "outlet_snap")],
                  append = FALSE)
@@ -506,7 +502,7 @@ wsd_nested <- function(outlet,
     xy <- sf::st_coordinates(outlet_snap)
 
     ## append point coordinates to polygons
-    site_id_num <- sf_wsd$site_id
+    site_id_num <- sf_wsd$fid
 
     sf_wsd <- sf_wsd %>%
       dplyr::mutate(id_col = identifier[site_id_num],
