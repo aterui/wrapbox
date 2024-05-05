@@ -16,7 +16,9 @@ wsd_nested(
   output_dir = "watershed",
   filename = "watershed",
   file_ext = "gpkg",
-  keep_outlet = FALSE
+  keep_outlet = FALSE,
+  simplify = TRUE,
+  keep = 0.5
 )
 }
 \arguments{
@@ -57,6 +59,13 @@ Ignored if \code{export = FALSE}.}
 \item{keep_outlet}{Logical.
 Whether a snapped outlet layer should be exported.
 Ignored if \code{export = FALSE}.}
+
+\item{simplify}{Logical.
+Whether simplify the output polygons.}
+
+\item{keep}{Numeric.
+Proportion of vertices kept after polygon simplifications.
+Ignored if \code{simplify = FALSE}}
 }
 \description{
 Delineate nested watersheds
