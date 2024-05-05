@@ -8,7 +8,6 @@ wsd_unnested(
   outlet,
   id_col,
   f_dir,
-  f_acc,
   str_grid,
   snap_dist = 5,
   export = TRUE,
@@ -25,8 +24,6 @@ wsd_unnested(
 This column information will be appended to the output polygon layer.}
 
 \item{f_dir}{Flow direction raster of class \code{SpatRaster}.}
-
-\item{f_acc}{Flow accumulation raster of class \code{SpatRaster}.}
 
 \item{str_grid}{Stream grid raster of class \code{SpatRaster}.}
 
