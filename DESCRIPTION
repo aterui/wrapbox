@@ -17,4 +17,7 @@ Imports:
   terra,
   stars,
   rmapshaper,
-  stringr
+  whitebox,
+  rlang,
+  stringr,
+  units

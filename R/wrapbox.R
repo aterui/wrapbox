@@ -227,11 +227,11 @@ point2utm <- function(point) {
 #' @param f_dir Flow direction raster of class \code{SpatRaster}.
 #' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
 #' @param outlet Outlet point layer of class \code{sf}.
+#' @param id_col Column name specifying outlet id.
+#'  This column information will be appended to the output polygon layer.
 #' @param snap_dist Numeric.
 #'  Distance threshold for snapping points to stream grid.
 #'  Measured in the unit of input raster files.
-#' @param id_col Column name specifying outlet id.
-#'  This column information will be appended to the output polygon layer.
 #' @param export Logical.
 #'  Whether output polygons should be exported.
 #' @param output_dir Character.
@@ -247,13 +247,21 @@ point2utm <- function(point) {
 #' @param keep_outlet Logical.
 #'  Whether a snapped outlet layer should be exported.
 #'  Ignored if \code{export = FALSE}.
+#'
+#' @importFrom stringr str_detect
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
 
 wsd_unnested <- function(str_grid,
                          f_dir,
                          f_acc,
                          outlet,
-                         snap_dist = 5,
                          id_col,
+                         snap_dist = 5,
                          export = TRUE,
                          output_dir = "data_fmt",
                          filename = "watershed",
@@ -314,40 +322,48 @@ wsd_unnested <- function(str_grid,
            as_points = FALSE) %>%
     dplyr::bind_rows() %>%
     dplyr::rowwise() %>%
-    dplyr::mutate(site_id = sum(dplyr::c_across(cols = ends_with("tif")),
+    dplyr::mutate(site_id = sum(dplyr::c_across(cols = dplyr::ends_with("tif")),
                                 na.rm = TRUE)) %>%
-    dplyr::select(site_id) %>%
+    dplyr::select(.data$site_id) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(area = units::set_units(st_area(.), "km^2")) %>%
-    dplyr::group_by(site_id) %>%
-    dplyr::slice(which.max(area)) %>% # remove duplicates by outlet
+    dplyr::mutate(area = units::set_units(sf::st_area(.data), "km^2")) %>%
+    dplyr::group_by(.data$site_id) %>%
+    dplyr::slice(which.max(.data$area)) %>% # remove duplicates by outlet
     dplyr::ungroup() %>%
-    dplyr::relocate(site_id, area) %>%
-    dplyr::arrange(site_id)
+    dplyr::relocate(.data$site_id, .data$area) %>%
+    dplyr::arrange(.data$site_id)
 
   outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
     dplyr::select(NULL)
 
   if (!missing(id_col)) {
+    ## pull id_col as an identifier
     identifier <- outlet %>%
-      pull(id_col)
+      dplyr::pull(id_col)
 
+    ## pull xy coordinates from original and snapped points
     xy0 <- sf::st_coordinates(outlet)
     xy <- sf::st_coordinates(outlet_snap)
 
+    ## append point coordinates to polygons
+    site_id_num <- sf_wsd$site_id
+
     sf_wsd <- sf_wsd %>%
-      dplyr::mutate(id_col = identifier[.$site_id],
-                    x0 = xy0[.$site_id, 1],
-                    y0 = xy0[.$site_id, 2],
-                    x = xy[.$site_id, 1],
-                    y = xy[.$site_id, 2]) %>%
-      dplyr::relocate(id_col, x, y)
+      dplyr::mutate(id_col = identifier[site_id_num],
+                    x0 = xy0[site_id_num, 1],
+                    y0 = xy0[site_id_num, 2],
+                    x = xy[site_id_num, 1],
+                    y = xy[site_id_num, 2]) %>%
+      dplyr::relocate(.data$id_col, .data$x, .data$y)
   }
 
   if (export) {
 
     if (!any(str_detect(list.files(".", recursive = TRUE), output_dir)))
       dir.create(output_dir)
+
+    if (!any(file_ext %in% c("gpkg", "shp")))
+      stop("'file_ext' must be either 'gpkg' or 'shp'")
 
     sf::st_write(sf_wsd,
                  dsn = paste0(output_dir,
@@ -373,9 +389,9 @@ wsd_unnested <- function(str_grid,
   ## remove temporary files
   message("Removing temporary files...")
 
-  files <- list.files(temppath, full.names = T)
+  files <- list.files(temppath, full.names = TRUE)
   cl <- call("file.remove", files)
-  bools <- suppressWarnings(eval(cl, envir = parent.frame()))
+  suppressWarnings(eval(cl, envir = parent.frame()))
 
   return(sf_wsd)
 }
