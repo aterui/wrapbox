@@ -395,3 +395,137 @@ wsd_unnested <- function(str_grid,
 
   return(sf_wsd)
 }
+
+
+#' Delineate nested watersheds
+#'
+#' @inheritParams wsd_unnested
+#'
+#' @importFrom stringr str_detect
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+#'
+#' @author Akira Terui, \email{hanabi0111@gmail.com}
+#'
+#' @export
+
+wsd_nested <- function(f_dir,
+                       outlet,
+                       snapping = FALSE,
+                       str_grid = NULL,
+                       f_acc = NULL,
+                       snap_dist = NULL,
+                       output_dir = "data_fmt",
+                       filename = "watershed",
+                       file_ext = "gpkg",
+                       export = FALSE,
+                       keep_outlet = FALSE) {
+
+  message("Saving temporary files...")
+  ## temporary file names
+  v_name <- paste0(tempdir(),
+                   "\\",
+                   c("dir.tif",
+                     "upa.tif",
+                     "outlet.shp",
+                     "outlet_snap.shp",
+                     "wsd.tif"))
+
+  ## write temporary files
+  if (snapping) {
+    ## temporary files
+    terra::writeRaster(str_grid,
+                       filename = v_name[str_detect(v_name, "strg")],
+                       overwrite = TRUE)
+
+    terra::writeRaster(f_dir,
+                       filename = v_name[str_detect(v_name, "dir")],
+                       overwrite = TRUE)
+
+    terra::writeRaster(f_acc,
+                       filename = v_name[str_detect(v_name, "upa")],
+                       overwrite = TRUE)
+
+    sf::st_write(outlet,
+                 dsn = v_name[str_detect(v_name, "outlet.shp")],
+                 append = FALSE)
+
+    ## snapping
+    message("Snap outlet points to the nearest stream grid...")
+    whitebox::wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
+                                          streams = v_name[str_detect(v_name, "strg")],
+                                          output = v_name[str_detect(v_name, "outlet_snap")],
+                                          snap_dist = snap_dist)
+  } else {
+    ## temporary files
+    terra::writeRaster(f_dir,
+                       filename = v_name[str_detect(v_name, "dir")],
+                       overwrite = TRUE)
+
+    st_write(outlet,
+             v_name[str_detect(v_name, "outlet_snap")],
+             append = FALSE)
+  }
+
+  ## watershed delineation: raster output
+  message("Delineate watersheds...")
+  wbt_watershed(d8_pntr = v_name[str_detect(v_name, "dir")],
+                pour_pts = v_name[str_detect(v_name, "outlet_snap")],
+                output = v_name[str_detect(v_name, "wsd")])
+
+  ## watershed delineation: vectorize
+  message("Vectorize raster watersheds...")
+  sf_wsd <- terra::rast(v_name[str_detect(v_name, "wsd")]) %>%
+    stars::st_as_stars() %>%
+    sf::st_as_sf(merge = TRUE,
+                 as_point = FALSE) %>%
+    rmapshaper::ms_simplify(keep = 0.5,
+                            sys = TRUE) %>%
+    sf::st_make_valid() %>%
+    dplyr::select(NULL) %>%
+    dplyr::mutate(fid = dplyr::row_number()) %>%
+    dplyr::relocate(fid)
+
+  outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
+    dplyr::select(NULL) %>%
+    mutate(fid = dplyr::row_number()) %>%
+    dplyr::relocate(fid)
+
+  ## export
+  if (export) {
+    ### create export directory
+    if (!(output_dir %in% list.files(".")))
+      dir.create(output_dir)
+
+    ### watershed polygon
+    sf::st_write(sf_wsd,
+                 dsn = paste0(output_dir,
+                              "/",
+                              filename,
+                              ".",
+                              file_ext),
+                 append = FALSE)
+
+    ### snapped outlet
+    if (keep_outlet) {
+      sf::st_write(outlet_snap,
+                   dsn = paste0(output_dir,
+                                "/",
+                                "outlet_snap",
+                                ".",
+                                file_ext),
+                   append = FALSE)
+    }
+  }
+
+  ## remove temporary files
+  message("Removing temporary files...")
+  files <- list.files(tempdir(), full.names = T)
+  cl <- call("file.remove", files)
+  bools <- suppressWarnings(eval(cl, envir = parent.frame()))
+
+  return(list(watershed = sf_wsd,
+              outlet = outlet_snap))
+}
+
+
