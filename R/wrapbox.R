@@ -227,7 +227,6 @@ point2utm <- function(point) {
 #' @param id_col Column name specifying outlet id.
 #'  This column information will be appended to the output polygon layer.
 #' @param f_dir Flow direction raster of class \code{SpatRaster}.
-#' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
 #' @param str_grid Stream grid raster of class \code{SpatRaster}.
 #' @param snap_dist Numeric.
 #'  Distance threshold for snapping points to stream grid.
@@ -259,7 +258,6 @@ point2utm <- function(point) {
 wsd_unnested <- function(outlet,
                          id_col,
                          f_dir,
-                         f_acc,
                          str_grid,
                          snap_dist = 5,
                          export = TRUE,
@@ -271,14 +269,13 @@ wsd_unnested <- function(outlet,
   ## temporary files
   message("Saving temporary files...")
   temppath <- tempdir()
-  v_name <- temppath %>%
-    paste(c("strg.tif",
-            "outlet.shp",
-            "outlet_snap.shp",
-            "upa.tif",
-            "dir.tif",
-            "wsd.tif"),
-          sep = "\\")
+  v_name <- paste(temppath,
+                  c("strg.tif",
+                    "outlet.shp",
+                    "outlet_snap.shp",
+                    "dir.tif",
+                    "wsd.tif"),
+                  sep = "\\")
 
   terra::writeRaster(str_grid,
                      filename = v_name[str_detect(v_name, "strg")],
@@ -286,10 +283,6 @@ wsd_unnested <- function(outlet,
 
   terra::writeRaster(f_dir,
                      filename = v_name[str_detect(v_name, "dir")],
-                     overwrite = TRUE)
-
-  terra::writeRaster(f_acc,
-                     filename = v_name[str_detect(v_name, "upa")],
                      overwrite = TRUE)
 
   sf::st_write(outlet,
@@ -418,7 +411,6 @@ wsd_unnested <- function(outlet,
 wsd_nested <- function(outlet,
                        id_col,
                        f_dir,
-                       f_acc = NULL,
                        str_grid = NULL,
                        snap = TRUE,
                        snap_dist = 5,
@@ -432,13 +424,14 @@ wsd_nested <- function(outlet,
 
   message("Saving temporary files...")
   ## temporary file names
-  v_name <- paste0(tempdir(),
-                   "\\",
-                   c("dir.tif",
-                     "upa.tif",
-                     "outlet.shp",
-                     "outlet_snap.shp",
-                     "wsd.tif"))
+  temppath <- tempdir()
+  v_name <- paste(temppath,
+                  c("strg.tif",
+                    "outlet.shp",
+                    "outlet_snap.shp",
+                    "dir.tif",
+                    "wsd.tif"),
+                  sep = "\\")
 
   ## write temporary files
   if (snap) {
@@ -449,10 +442,6 @@ wsd_nested <- function(outlet,
 
     terra::writeRaster(f_dir,
                        filename = v_name[str_detect(v_name, "dir")],
-                       overwrite = TRUE)
-
-    terra::writeRaster(f_acc,
-                       filename = v_name[str_detect(v_name, "upa")],
                        overwrite = TRUE)
 
     sf::st_write(outlet,
@@ -557,7 +546,7 @@ wsd_nested <- function(outlet,
 
   ## remove temporary files
   message("Removing temporary files...")
-  files <- list.files(tempdir(), full.names = TRUE)
+  files <- list.files(temppath, full.names = TRUE)
   cl <- call("file.remove", files)
   suppressWarnings(eval(cl, envir = parent.frame()))
 
