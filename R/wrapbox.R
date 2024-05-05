@@ -223,12 +223,12 @@ point2utm <- function(point) {
 
 #' Delineate unnested watersheds
 #'
-#' @param str_grid Stream grid raster of class \code{SpatRaster}.
-#' @param f_dir Flow direction raster of class \code{SpatRaster}.
-#' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
 #' @param outlet Outlet point layer of class \code{sf}.
 #' @param id_col Column name specifying outlet id.
 #'  This column information will be appended to the output polygon layer.
+#' @param f_dir Flow direction raster of class \code{SpatRaster}.
+#' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
+#' @param str_grid Stream grid raster of class \code{SpatRaster}.
 #' @param snap_dist Numeric.
 #'  Distance threshold for snapping points to stream grid.
 #'  Measured in the unit of input raster files.
@@ -256,14 +256,14 @@ point2utm <- function(point) {
 #'
 #' @export
 
-wsd_unnested <- function(str_grid,
+wsd_unnested <- function(outlet,
+                         id_col,
                          f_dir,
                          f_acc,
-                         outlet,
-                         id_col,
+                         str_grid,
                          snap_dist = 5,
                          export = TRUE,
-                         output_dir = "data_fmt",
+                         output_dir = "watershed",
                          filename = "watershed",
                          file_ext = "gpkg",
                          keep_outlet = FALSE) {
