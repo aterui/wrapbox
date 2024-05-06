@@ -640,7 +640,8 @@ grid2stream <- function(f_dir,
   if (set_crs) {
     sf::st_read(output) %>%
       sf::st_set_crs(terra::crs(f_dir)) %>%
-      sf::st_write(append = FALSE)
+      sf::st_write(dsn = output,
+                   append = FALSE)
   }
 
   channel <- sf::st_read(output)
