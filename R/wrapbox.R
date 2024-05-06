@@ -319,7 +319,7 @@ wsd_unnested <- function(outlet,
   ## vectorize
   message("Vectorize raster watersheds...")
 
-  sf_wsd <- list.files(path = temppath,
+  sf_wsd0 <- list.files(path = temppath,
                        pattern = "wsd",
                        full.names = TRUE) %>%
     lapply(terra::rast) %>%
@@ -332,8 +332,10 @@ wsd_unnested <- function(outlet,
     dplyr::mutate(site_id = sum(dplyr::c_across(cols = dplyr::ends_with("tif")),
                                 na.rm = TRUE)) %>%
     dplyr::select(.data$site_id) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(area = units::set_units(sf::st_area(.data), "km^2")) %>%
+    dplyr::ungroup()
+
+  sf_wsd <- sf_wsd0 %>%
+    dplyr::mutate(area = units::set_units(sf::st_area(sf_wsd0), "km^2")) %>%
     dplyr::group_by(.data$site_id) %>%
     dplyr::slice(which.max(.data$area)) %>% # remove duplicates by outlet
     dplyr::ungroup() %>%
