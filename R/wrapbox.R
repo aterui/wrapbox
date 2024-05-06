@@ -556,6 +556,8 @@ wsd_nested <- function(outlet,
 #' @param threshold Numeric.
 #'  Threshold value for minimum stream grid.
 #'  The unit inherits from input the flow accumulation layer.
+#' @param output Character.
+#'  Output file path.
 #'
 #' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
@@ -565,13 +567,14 @@ wsd_nested <- function(outlet,
 #' @export
 
 flow2grid <- function(f_acc,
-                      threshold) {
+                      threshold,
+                      output) {
 
   ## temporary file names
   temppath <- tempdir()
   fname <- paste0(temppath,
                   "\\",
-                  c("upa.tif", "strg.tif"))
+                  "upa.tif")
 
   ## write raster input in temporary folder
   terra::writeRaster(f_acc,
@@ -580,10 +583,10 @@ flow2grid <- function(f_acc,
 
   ## stream grids
   whitebox::wbt_extract_streams(flow_accum = fname[str_detect(fname, "upa")],
-                                output = fname[str_detect(fname, "strg")],
+                                output = output,
                                 threshold = threshold)
 
-  strg <- terra::rast(fname[str_detect(fname, "strg")])
+  strg <- terra::rast(output)
 
   return(strg)
 }
