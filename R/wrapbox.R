@@ -638,13 +638,16 @@ grid2stream <- function(f_dir,
                                          output = output)
 
   if (set_crs) {
-    sf::st_read(output) %>%
+    sf::st_read(output,
+                quiet = TRUE) %>%
       sf::st_set_crs(terra::crs(f_dir)) %>%
       sf::st_write(dsn = output,
-                   append = FALSE)
+                   append = FALSE,
+                   quiet = TRUE)
   }
 
-  channel <- sf::st_read(output)
+  channel <- sf::st_read(output,
+                         quiet = TRUE)
 
   ## remove temporary files
   message("Removing temporary files...")
