@@ -511,11 +511,15 @@ wsd_nested <- function(outlet,
 
   outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
     dplyr::group_by(.data$geometry) %>%
-    dplyr::mutate(gid = dplyr::cur_group_id()) %>%
+    dplyr::mutate(pid = dplyr::cur_group_id()) %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(id_org = ifelse(missing(id_col),
-                                  NA,
-                                  dplyr::pull(outlet, id_col)))
+    dplyr::relocate(pid)
+
+  if (!missing(id_col)) {
+    outlet_snap <- outlet_snap %>%
+      dplyr::mutate(id_col = dplyr::pull(outlet, id_col)) %>%
+      dplyr::relocate(id_col)
+  }
 
   ### NOTE ###
   # This part of code for appending id_col is not working
