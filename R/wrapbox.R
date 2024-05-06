@@ -505,8 +505,9 @@ wsd_nested <- function(outlet,
 
   outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
     dplyr::select(NULL) %>%
-    dplyr::mutate(fid = dplyr::row_number()) %>%
-    dplyr::relocate(.data$fid)
+    dplyr::group_by(.data$geometry) %>%
+    dplyr::mutate(gid = dplyr::cur_group_id()) %>%
+    dplyr::ungroup()
 
   ## append id_col to watershed polygons
   if (!missing(id_col)) {
@@ -514,19 +515,27 @@ wsd_nested <- function(outlet,
     identifier <- outlet %>%
       dplyr::pull(id_col)
 
+    outlet_snap <- outlet_snap %>%
+      dplyr::mutate(id_org = identifier)
+
+    pid <- outlet_snap %>%
+      dplyr::group_by(.data$gid) %>%
+      dplyr::slice(1) %>%
+      dplyr::pull(.data$id_org)
+
+    index_num <- which(identifier %in% pid)
+
     ## pull xy coordinates from original and snapped points
     xy0 <- sf::st_coordinates(outlet)
     xy <- sf::st_coordinates(outlet_snap)
 
     ## append point coordinates to polygons
-    site_id_num <- sf_wsd$fid
-
     sf_wsd <- sf_wsd %>%
-      dplyr::mutate(id_col = identifier[site_id_num],
-                    x0 = xy0[site_id_num, 1],
-                    y0 = xy0[site_id_num, 2],
-                    x = xy[site_id_num, 1],
-                    y = xy[site_id_num, 2]) %>%
+      dplyr::mutate(id_col = identifier[index_num],
+                    x0 = xy0[index_num, 1],
+                    y0 = xy0[index_num, 2],
+                    x = xy[index_num, 1],
+                    y = xy[index_num, 2]) %>%
       dplyr::relocate(.data$id_col, .data$x, .data$y)
   }
 
