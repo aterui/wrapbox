@@ -4,12 +4,15 @@
 \alias{grid2stream}
 \title{Convert stream grid to vector stream}
 \usage{
-grid2stream(f_dir, str_grid)
+grid2stream(f_dir, str_grid, output)
 }
 \arguments{
 \item{f_dir}{Flow direction raster of class \code{SpatRaster}.}
 
 \item{str_grid}{Stream grid raster of class \code{SpatRaster}.}
+
+\item{output}{Character.
+File path for output stream vector.}
 }
 \description{
 Convert stream grid to vector stream

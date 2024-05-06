@@ -557,7 +557,7 @@ wsd_nested <- function(outlet,
 #'  Threshold value for minimum stream grid.
 #'  The unit inherits from input the flow accumulation layer.
 #' @param output Character.
-#'  Output file path.
+#'  File path for output stream grid.
 #'
 #' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
@@ -588,12 +588,20 @@ flow2grid <- function(f_acc,
 
   strg <- terra::rast(output)
 
+  ## remove temporary files
+  message("Removing temporary files...")
+  files <- list.files(temppath, full.names = TRUE)
+  cl <- call("file.remove", files)
+  suppressWarnings(eval(cl, envir = parent.frame()))
+
   return(strg)
 }
 
 #' Convert stream grid to vector stream
 #'
 #' @inheritParams wsd_unnested
+#' @param output Character.
+#'  File path for output stream vector.
 #'
 #' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
@@ -603,13 +611,14 @@ flow2grid <- function(f_acc,
 #' @export
 
 grid2stream <- function(f_dir,
-                        str_grid) {
+                        str_grid,
+                        output) {
 
   ## temporary file names
   temppath <- tempdir()
   fname <- paste0(temppath,
                   "\\",
-                  c("dir.tif", "strg.tif", "channel.shp"))
+                  c("dir.tif", "strg.tif"))
 
   ## write raster input in temporary folder
   terra::writeRaster(f_dir,
@@ -623,9 +632,9 @@ grid2stream <- function(f_dir,
   ## stream grids
   whitebox::wbt_raster_streams_to_vector(streams = fname[str_detect(fname, "strg")],
                                          d8_pntr = fname[str_detect(fname, "dir")],
-                                         output = fname[str_detect(fname, "strg")])
+                                         output = output)
 
-  channel <- sf::st_read(fname[str_detect(fname, "channel")])
+  channel <- sf::st_read(output)
 
   ## remove temporary files
   message("Removing temporary files...")

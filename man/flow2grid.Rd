@@ -14,7 +14,7 @@ Threshold value for minimum stream grid.
 The unit inherits from input the flow accumulation layer.}
 
 \item{output}{Character.
-Output file path.}
+File path for output stream grid.}
 }
 \description{
 Convert flow accumulation raster to stream grid
