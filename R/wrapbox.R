@@ -602,6 +602,8 @@ flow2grid <- function(f_acc,
 #' @inheritParams wsd_unnested
 #' @param output Character.
 #'  File path for output stream vector.
+#' @param set_crs Logical.
+#'  Whether output file should inherit CRS from the input flow direction raster.
 #'
 #' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
@@ -612,7 +614,8 @@ flow2grid <- function(f_acc,
 
 grid2stream <- function(f_dir,
                         str_grid,
-                        output) {
+                        output,
+                        set_crs = TRUE) {
 
   ## temporary file names
   temppath <- tempdir()
@@ -633,6 +636,12 @@ grid2stream <- function(f_dir,
   whitebox::wbt_raster_streams_to_vector(streams = fname[str_detect(fname, "strg")],
                                          d8_pntr = fname[str_detect(fname, "dir")],
                                          output = output)
+
+  if (set_crs) {
+    sf::st_read(output) %>%
+      sf::st_set_crs(terra::crs(f_dir)) %>%
+      sf::st_write(append = FALSE)
+  }
 
   channel <- sf::st_read(output)
 
