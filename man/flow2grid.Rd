@@ -4,7 +4,7 @@
 \alias{flow2grid}
 \title{Convert flow accumulation raster to stream grid}
 \usage{
-flow2grid(f_acc, threshold)
+flow2grid(f_acc, threshold, output)
 }
 \arguments{
 \item{f_acc}{Flow accumulation raster of class \code{SpatRaster}.}
@@ -12,6 +12,9 @@ flow2grid(f_acc, threshold)
 \item{threshold}{Numeric.
 Threshold value for minimum stream grid.
 The unit inherits from input the flow accumulation layer.}
+
+\item{output}{Character.
+Output file path.}
 }
 \description{
 Convert flow accumulation raster to stream grid
