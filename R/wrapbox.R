@@ -513,12 +513,12 @@ wsd_nested <- function(outlet,
     dplyr::group_by(.data$geometry) %>%
     dplyr::mutate(pid = dplyr::cur_group_id()) %>%
     dplyr::ungroup() %>%
-    dplyr::relocate(pid)
+    dplyr::relocate(.data$pid)
 
   if (!missing(id_col)) {
     outlet_snap <- outlet_snap %>%
       dplyr::mutate(id_col = dplyr::pull(outlet, id_col)) %>%
-      dplyr::relocate(id_col)
+      dplyr::relocate(.data$id_col)
   }
 
   ### NOTE ###
