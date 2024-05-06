@@ -363,7 +363,11 @@ wsd_unnested <- function(outlet,
                     y0 = xy0[site_id_num, 2],
                     x = xy[site_id_num, 1],
                     y = xy[site_id_num, 2]) %>%
-      dplyr::relocate(.data$id_col, .data$x, .data$y)
+      dplyr::relocate(.data$id_col,
+                      .data$x,
+                      .data$y,
+                      .data$x0,
+                      .data$y0)
   }
 
   if (export) {
@@ -520,7 +524,7 @@ wsd_nested <- function(outlet,
 
     pid <- outlet_snap %>%
       dplyr::group_by(.data$gid) %>%
-      dplyr::slice(1) %>%
+      dplyr::slice(dplyr::n()) %>%
       dplyr::pull(.data$id_org)
 
     index_num <- which(identifier %in% pid)
@@ -536,7 +540,11 @@ wsd_nested <- function(outlet,
                     y0 = xy0[index_num, 2],
                     x = xy[index_num, 1],
                     y = xy[index_num, 2]) %>%
-      dplyr::relocate(.data$id_col, .data$x, .data$y)
+      dplyr::relocate(.data$id_col,
+                      .data$x,
+                      .data$y,
+                      .data$x0,
+                      .data$y0)
   }
 
   ## export
