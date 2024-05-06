@@ -496,17 +496,20 @@ wsd_nested <- function(outlet,
     stars::st_as_stars() %>%
     sf::st_as_sf(merge = TRUE,
                  as_point = FALSE) %>%
-    sf::st_make_valid() %>%
     dplyr::select(NULL) %>%
     dplyr::mutate(fid = dplyr::row_number()) %>%
     dplyr::relocate(.data$fid)
 
   if (simplify) {
+    ## with simplification
     if (!(keep < 1 && keep > 0))
       stop("'keep' must be greater than 0 and less than 1")
-
     sf_wsd <- rmapshaper::ms_simplify(sf_wsd,
-                                      keep = keep)
+                                      keep = keep) %>%
+      sf::st_make_valid()
+  } else {
+    ## without simplification
+    sf_wsd <- sf::st_make_valid(sf_wsd)
   }
 
   outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
