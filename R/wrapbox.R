@@ -320,8 +320,8 @@ wsd_unnested <- function(outlet,
   message("Vectorize raster watersheds...")
 
   sf_wsd0 <- list.files(path = temppath,
-                       pattern = "wsd",
-                       full.names = TRUE) %>%
+                        pattern = "wsd",
+                        full.names = TRUE) %>%
     lapply(terra::rast) %>%
     lapply(stars::st_as_stars) %>%
     lapply(sf::st_as_sf,
