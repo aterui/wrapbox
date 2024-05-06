@@ -412,6 +412,8 @@ wsd_unnested <- function(outlet,
 #' Delineate nested watersheds
 #'
 #' @inheritParams wsd_unnested
+#' @param id_col Column name specifying outlet id.
+#'  This column information will be appended to the snapped outlet layer.
 #' @param simplify Logical.
 #'  Whether simplify the output polygons.
 #' @param keep Numeric.
@@ -509,11 +511,11 @@ wsd_nested <- function(outlet,
 
   outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
     dplyr::group_by(.data$geometry) %>%
-    dplyr::mutate(id_col = ifelse(missing(id_col),
+    dplyr::mutate(gid = dplyr::cur_group_id()) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(id_org = ifelse(missing(id_col),
                                   NA,
-                                  dplyr::pull(outlet, idcol)),
-                  gid = dplyr::cur_group_id()) %>%
-    dplyr::ungroup()
+                                  dplyr::pull(outlet, id_col)))
 
   ### NOTE ###
   # This part of code for appending id_col is not working

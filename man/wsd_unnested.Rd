@@ -11,7 +11,7 @@ wsd_unnested(
   str_grid = NULL,
   snap = TRUE,
   snap_dist = 5,
-  export = TRUE,
+  export = FALSE,
   output_dir = "watershed",
   filename = "watershed",
   file_ext = "gpkg",

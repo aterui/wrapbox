@@ -24,7 +24,7 @@ wsd_nested(
 \item{outlet}{Outlet point layer of class \code{sf}.}
 
 \item{id_col}{Column name specifying outlet id.
-This column information will be appended to the output polygon layer.}
+This column information will be appended to the snapped outlet layer.}
 
 \item{f_dir}{Flow direction raster of class \code{SpatRaster}.}
 
