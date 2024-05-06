@@ -228,6 +228,8 @@ point2utm <- function(point) {
 #'  This column information will be appended to the output polygon layer.
 #' @param f_dir Flow direction raster of class \code{SpatRaster}.
 #' @param str_grid Stream grid raster of class \code{SpatRaster}.
+#' @param snap Logical.
+#'  Whether snapping of outlet points should be performed.
 #' @param snap_dist Numeric.
 #'  Distance threshold for snapping points to stream grid.
 #'  Measured in the unit of input raster files.
@@ -258,7 +260,8 @@ point2utm <- function(point) {
 wsd_unnested <- function(outlet,
                          id_col,
                          f_dir,
-                         str_grid,
+                         str_grid = NULL,
+                         snap = TRUE,
                          snap_dist = 5,
                          export = TRUE,
                          output_dir = "watershed",
@@ -277,10 +280,6 @@ wsd_unnested <- function(outlet,
                     "wsd.tif"),
                   sep = "\\")
 
-  terra::writeRaster(str_grid,
-                     filename = v_name[str_detect(v_name, "strg")],
-                     overwrite = TRUE)
-
   terra::writeRaster(f_dir,
                      filename = v_name[str_detect(v_name, "dir")],
                      overwrite = TRUE)
@@ -290,11 +289,26 @@ wsd_unnested <- function(outlet,
                append = FALSE)
 
   ## snapping
-  message("Snap outlet points to the nearest stream grid...")
-  whitebox::wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
-                                        streams = v_name[str_detect(v_name, "strg")],
-                                        output = v_name[str_detect(v_name, "outlet_snap")],
-                                        snap_dist = snap_dist)
+  if (snap) {
+    ## with snapping
+    if (is.null(str_grid))
+      stop("Stream grid 'str_grid' must be supplied if snap = TRUE")
+
+    terra::writeRaster(str_grid,
+                       filename = v_name[str_detect(v_name, "strg")],
+                       overwrite = TRUE)
+
+    message("Snap outlet points to the nearest stream grid...")
+    whitebox::wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
+                                          streams = v_name[str_detect(v_name, "strg")],
+                                          output = v_name[str_detect(v_name, "outlet_snap")],
+                                          snap_dist = snap_dist)
+  } else {
+    ## with no snapping
+    sf::st_write(outlet,
+                 dsn = v_name[str_detect(v_name, "outlet_snap.shp")],
+                 append = FALSE)
+  }
 
   ## delineation
   message("Delineate watersheds...")
@@ -392,8 +406,6 @@ wsd_unnested <- function(outlet,
 #' Delineate nested watersheds
 #'
 #' @inheritParams wsd_unnested
-#' @param snap Logical.
-#'  Whether snapping of outlet points should be performed.
 #' @param simplify Logical.
 #'  Whether simplify the output polygons.
 #' @param keep Numeric.
@@ -438,8 +450,12 @@ wsd_nested <- function(outlet,
                      filename = v_name[str_detect(v_name, "dir")],
                      overwrite = TRUE)
 
+  ## snapping
   if (snap) {
-    ## temporary files
+    ## with snapping
+    if (is.null(str_grid))
+      stop("Stream grid 'str_grid' must be supplied if snap = TRUE")
+
     terra::writeRaster(str_grid,
                        filename = v_name[str_detect(v_name, "strg")],
                        overwrite = TRUE)
@@ -448,14 +464,13 @@ wsd_nested <- function(outlet,
                  dsn = v_name[str_detect(v_name, "outlet.shp")],
                  append = FALSE)
 
-    ## snapping
     message("Snap outlet points to the nearest stream grid...")
     whitebox::wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
                                           streams = v_name[str_detect(v_name, "strg")],
                                           output = v_name[str_detect(v_name, "outlet_snap")],
                                           snap_dist = snap_dist)
   } else {
-    ## temporary files
+    ## with no snapping
     sf::st_write(outlet,
                  v_name[str_detect(v_name, "outlet_snap")],
                  append = FALSE)

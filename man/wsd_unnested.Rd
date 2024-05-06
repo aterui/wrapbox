@@ -8,7 +8,8 @@ wsd_unnested(
   outlet,
   id_col,
   f_dir,
-  str_grid,
+  str_grid = NULL,
+  snap = TRUE,
   snap_dist = 5,
   export = TRUE,
   output_dir = "watershed",
@@ -26,6 +27,9 @@ This column information will be appended to the output polygon layer.}
 \item{f_dir}{Flow direction raster of class \code{SpatRaster}.}
 
 \item{str_grid}{Stream grid raster of class \code{SpatRaster}.}
+
+\item{snap}{Logical.
+Whether snapping of outlet points should be performed.}
 
 \item{snap_dist}{Numeric.
 Distance threshold for snapping points to stream grid.
