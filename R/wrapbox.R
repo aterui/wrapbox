@@ -492,11 +492,17 @@ wsd_nested <- function(outlet,
 
   ## watershed delineation: vectorize
   message("Vectorize raster watersheds...")
-  sf_wsd <- terra::rast(v_name[str_detect(v_name, "wsd")]) %>%
+  sf_wsd0 <- terra::rast(v_name[str_detect(v_name, "wsd")]) %>%
     stars::st_as_stars() %>%
     sf::st_as_sf(merge = TRUE,
                  as_point = FALSE) %>%
-    dplyr::rename(tifid = .data$wsd.tif) %>%
+    dplyr::rename(tifid = .data$wsd.tif)
+
+  sf_wsd <- sf_wsd0 %>%
+    dplyr::mutate(area = sf::st_area(sf_wsd0)) %>%
+    dplyr::group_by(.data$tifid) %>%
+    dplyr::slice(which.max(.data$area)) %>%
+    dplyr::ungroup() %>%
     dplyr::mutate(fid = dplyr::row_number()) %>%
     dplyr::relocate(.data$fid)
 
