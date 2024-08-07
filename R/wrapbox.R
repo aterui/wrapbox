@@ -500,6 +500,8 @@ wsd_nested <- function(outlet,
     dplyr::mutate(fid = dplyr::row_number()) %>%
     dplyr::relocate(.data$fid)
 
+  outlet_id <- dplyr::pull(sf_wsd, tifid)
+
   if (simplify) {
     ## with simplification
     if (!(keep < 1 && keep > 0))
@@ -521,7 +523,11 @@ wsd_nested <- function(outlet,
   if (!missing(id_col)) {
     outlet_snap <- outlet_snap %>%
       dplyr::mutate(id_col = dplyr::pull(outlet, id_col)) %>%
-      dplyr::relocate(.data$id_col)
+      dplyr::relocate(.data$id_col) %>%
+      dplyr::slice(outlet_id)
+  } else {
+    outlet_snap <- outlet_snap %>%
+      dplyr::slice(outlet_id)
   }
 
   ### NOTE ###
