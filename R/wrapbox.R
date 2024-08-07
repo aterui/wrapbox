@@ -504,7 +504,8 @@ wsd_nested <- function(outlet,
     dplyr::slice(which.max(.data$area)) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(fid = dplyr::row_number()) %>%
-    dplyr::relocate(.data$fid)
+    dplyr::relocate(.data$fid) %>%
+    dplyr::select(-area)
 
   outlet_id <- dplyr::pull(sf_wsd, .data$tifid)
 
