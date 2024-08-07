@@ -496,7 +496,7 @@ wsd_nested <- function(outlet,
     stars::st_as_stars() %>%
     sf::st_as_sf(merge = TRUE,
                  as_point = FALSE) %>%
-    dplyr::rename(tifid = wsd.tif) %>%
+    dplyr::rename(tifid = .data$wsd.tif) %>%
     dplyr::mutate(fid = dplyr::row_number()) %>%
     dplyr::relocate(.data$fid)
 
