@@ -500,7 +500,7 @@ wsd_nested <- function(outlet,
     dplyr::mutate(fid = dplyr::row_number()) %>%
     dplyr::relocate(.data$fid)
 
-  outlet_id <- dplyr::pull(sf_wsd, tifid)
+  outlet_id <- dplyr::pull(sf_wsd, .data$tifid)
 
   if (simplify) {
     ## with simplification
