@@ -16,7 +16,7 @@ wsd_nested(
   filename = "watershed",
   file_ext = "gpkg",
   keep_outlet = FALSE,
-  simplify = TRUE,
+  simplify = FALSE,
   keep = 0.5
 )
 }
