@@ -439,7 +439,7 @@ wsd_nested <- function(outlet,
                        filename = "watershed",
                        file_ext = "gpkg",
                        keep_outlet = FALSE,
-                       simplify = TRUE,
+                       simplify = FALSE,
                        keep = 0.5) {
 
   message("Saving temporary files...")
@@ -535,44 +535,6 @@ wsd_nested <- function(outlet,
     outlet_snap <- outlet_snap %>%
       dplyr::slice(outlet_id)
   }
-
-  ### NOTE ###
-  # This part of code for appending id_col is not working
-  # Revisit in the future if needed
-
-  # ## append id_col to watershed polygons
-  # if (!missing(id_col)) {
-  #   ## pull id_col as an identifier
-  #   identifier <- outlet %>%
-  #     dplyr::pull(id_col)
-  #
-  #   outlet_snap <- outlet_snap %>%
-  #     dplyr::mutate(id_org = identifier)
-  #
-  #   pid <- outlet_snap %>%
-  #     dplyr::group_by(.data$gid) %>%
-  #     dplyr::slice(dplyr::n()) %>%
-  #     dplyr::pull(.data$id_org)
-  #
-  #   index_num <- which(identifier %in% pid)
-  #
-  #   ## pull xy coordinates from original and snapped points
-  #   xy0 <- sf::st_coordinates(outlet)
-  #   xy <- sf::st_coordinates(outlet_snap)
-  #
-  #   ## append point coordinates to polygons
-  #   sf_wsd <- sf_wsd %>%
-  #     dplyr::mutate(id_col = identifier[index_num],
-  #                   x0 = xy0[index_num, 1],
-  #                   y0 = xy0[index_num, 2],
-  #                   x = xy[index_num, 1],
-  #                   y = xy[index_num, 2]) %>%
-  #     dplyr::relocate(.data$id_col,
-  #                     .data$x,
-  #                     .data$y,
-  #                     .data$x0,
-  #                     .data$y0)
-  # }
 
   ## export
   if (export) {
