@@ -227,7 +227,6 @@ point2utm <- function(point) {
 #'  Distance threshold for snapping points to stream grid.
 #'  Measured in the unit of input raster files.
 #'
-#' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
 #' @importFrom rlang .data
 #'
@@ -323,11 +322,10 @@ wsd_unnested <- function(outlet,
            merge = TRUE,
            as_points = FALSE) %>%
     dplyr::bind_rows() %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(site_id = sum(dplyr::c_across(cols = dplyr::ends_with("tif")),
-                                na.rm = TRUE)) %>%
-    dplyr::select(.data$site_id) %>%
-    dplyr::ungroup()
+    dplyr::mutate(site_id = rowSums(
+      dplyr::across(dplyr::ends_with("tif")), na.rm = TRUE
+    )) %>%
+    dplyr::select("site_id")
 
   sf_wsd <- sf_wsd0 %>%
     dplyr::mutate(area = units::set_units(sf::st_area(sf_wsd0), "km^2")) %>%
@@ -337,8 +335,9 @@ wsd_unnested <- function(outlet,
     dplyr::relocate(.data$site_id, .data$area) %>%
     dplyr::arrange(.data$site_id)
 
-  outlet_snap <- sf::st_read(dsn = v_name[str_detect(v_name, "outlet_snap")]) %>%
-    dplyr::select(NULL)
+  outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
+    sf::st_geometry() %>%
+    sf::st_as_sf()
 
   if (!missing(id_col)) {
     ## pull id_col as an identifier
