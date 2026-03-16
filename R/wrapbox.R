@@ -233,21 +233,6 @@ point2utm <- function(point) {
 #' @param snap_dist Numeric.
 #'  Distance threshold for snapping points to stream grid.
 #'  Measured in the unit of input raster files.
-#' @param export Logical.
-#'  Whether output polygons should be exported.
-#' @param output_dir Character.
-#'  Specify a directly name for output.
-#'  Ignored if \code{export = FALSE}.
-#' @param filename Character.
-#'  Specify a file name of output watershed polygons.
-#'  Ignored if \code{export = FALSE}.
-#' @param file_ext Character.
-#'  Specify a file extension of output files.
-#'  Either \code{"gpkg"} or \code{"shp"}.
-#'  Ignored if \code{export = FALSE}.
-#' @param keep_outlet Logical.
-#'  Whether a snapped outlet layer should be exported.
-#'  Ignored if \code{export = FALSE}.
 #'
 #' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
@@ -262,65 +247,82 @@ wsd_unnested <- function(outlet,
                          f_dir,
                          str_grid = NULL,
                          snap = TRUE,
-                         snap_dist = 5,
-                         export = FALSE,
-                         output_dir = "watershed",
-                         filename = "watershed",
-                         file_ext = "gpkg",
-                         keep_outlet = FALSE) {
+                         snap_dist = 5) {
 
-  ## temporary files
+  # temporary files ---------------------------------------------------------
+
   message("Saving temporary files...")
-  temppath <- tempdir()
-  v_name <- paste(temppath,
-                  c("strg.tif",
-                    "outlet.shp",
-                    "outlet_snap.shp",
-                    "dir.tif",
-                    "wsd.tif"),
-                  sep = "\\")
 
+  ## setup temporary directory
+  temppath <- tempfile(pattern = "wsd_")
+  dir.create(temppath)
+
+  on.exit(
+    unlink(temppath, recursive = TRUE),
+    add = TRUE
+  )
+
+  ## setup temporary file names
+  v_name <- file.path(temppath,
+                      c("strg.tif",
+                        "outlet.shp",
+                        "outlet_snap.shp",
+                        "dir.tif",
+                        "wsd.tif")) %>%
+    setNames(c("strg",
+               "outlet",
+               "outlet_snap",
+               "dir",
+               "wsd"))
+
+  ## write base raster files
   terra::writeRaster(f_dir,
-                     filename = v_name[str_detect(v_name, "dir")],
+                     filename = unname(v_name["dir"]),
                      overwrite = TRUE)
 
   sf::st_write(outlet,
-               dsn = v_name[str_detect(v_name, "outlet.shp")],
+               dsn = unname(v_name["outlet"]),
                append = FALSE)
 
-  ## snapping
+
+  # snapping outlets --------------------------------------------------------
+
   if (snap) {
-    ## with snapping
+    ## w/ snapping
     if (is.null(str_grid))
       stop("Stream grid 'str_grid' must be supplied if snap = TRUE")
 
     terra::writeRaster(str_grid,
-                       filename = v_name[str_detect(v_name, "strg")],
+                       filename = unname(v_name["strg"]),
                        overwrite = TRUE)
 
     message("Snap outlet points to the nearest stream grid...")
-    whitebox::wbt_jenson_snap_pour_points(pour_pts = v_name[str_detect(v_name, "outlet\\.")],
-                                          streams = v_name[str_detect(v_name, "strg")],
-                                          output = v_name[str_detect(v_name, "outlet_snap")],
+    whitebox::wbt_jenson_snap_pour_points(pour_pts = unname(v_name["outlet"]),
+                                          streams = unname(v_name["strg"]),
+                                          output = unname(v_name["outlet_snap"]),
                                           snap_dist = snap_dist)
   } else {
-    ## with no snapping
+    ## w/o snapping
     sf::st_write(outlet,
-                 dsn = v_name[str_detect(v_name, "outlet_snap.shp")],
+                 dsn = unname(v_name["outlet_snap"]),
                  append = FALSE)
   }
 
-  ## delineation
-  message("Delineate watersheds...")
-  whitebox::wbt_unnest_basins(d8_pntr = v_name[str_detect(v_name, "dir")],
-                              pour_pts = v_name[str_detect(v_name, "outlet_snap")],
-                              output = v_name[str_detect(v_name, "wsd")])
 
-  ## vectorize
+  # delineation -------------------------------------------------------------
+
+  message("Delineate watersheds...")
+
+  whitebox::wbt_unnest_basins(d8_pntr = unname(v_name["dir"]),
+                              pour_pts = unname(v_name["outlet_snap"]),
+                              output = unname(v_name["wsd"]))
+
+  # vectorize ---------------------------------------------------------------
+
   message("Vectorize raster watersheds...")
 
   sf_wsd0 <- list.files(path = temppath,
-                        pattern = "wsd",
+                        pattern = "wsd.*\\.tif$",
                         full.names = TRUE) %>%
     lapply(terra::rast) %>%
     lapply(stars::st_as_stars) %>%
@@ -370,41 +372,8 @@ wsd_unnested <- function(outlet,
                       .data$y0)
   }
 
-  if (export) {
-
-    if (!any(str_detect(list.files(".", recursive = TRUE), output_dir)))
-      dir.create(output_dir)
-
-    if (!any(file_ext %in% c("gpkg", "shp")))
-      stop("'file_ext' must be either 'gpkg' or 'shp'")
-
-    sf::st_write(sf_wsd,
-                 dsn = paste0(output_dir,
-                              "/",
-                              filename,
-                              ".",
-                              file_ext),
-                 append = FALSE)
-
-    if (keep_outlet) {
-
-      sf::st_write(outlet_snap,
-                   dsn = paste0(output_dir,
-                                "/",
-                                "outlet_snap",
-                                ".",
-                                file_ext),
-                   append = FALSE)
-    }
-
-  }
-
   ## remove temporary files
   message("Removing temporary files...")
-
-  files <- list.files(temppath, full.names = TRUE)
-  cl <- call("file.remove", files)
-  suppressWarnings(eval(cl, envir = parent.frame()))
 
   return(sf_wsd)
 }
