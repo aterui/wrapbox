@@ -153,46 +153,39 @@ rast2poly <- function(x,
 get_utm <- function(x, y) {
 
   ## check inputs
-  if (x < -180 || x > 180)
+  if (x < -180 || x >= 180)
     stop("Invalid value in x")
-
   if (y < -90 || y > 90)
     stop("Invalid value in y")
 
-  ## x - longitude
-  x0 <- seq(-180, 180, by = 6)
-  x_med <- x0 + 3
+  ## UTM zone
+  zone <- (floor((x + 180) / 6) %% 60) + 1
 
-  ## find the nearest center UTM
-  zone <- which.min(abs(x - x_med))
-
-  ## exception
-  if (y >= 56 && y < 64 && x >= 0 && x < 6) {
+  ## Norway exception (zone 32V)
+  if (y >= 56 && y < 64 && x >= 3 && x < 12)
     zone <- 32
+
+  ## Svalbard exceptions (X band)
+  if (y >= 72 && y < 84) {
+    if (x >= 0  && x < 9)  zone <- 31
+    if (x >= 9  && x < 21) zone <- 33
+    if (x >= 21 && x < 33) zone <- 35
+    if (x >= 33 && x < 42) zone <- 37
   }
 
-  if (y > 0) {
-
-    ## epsg code for northern hemisphere
-    if (y < 60) {
-      ## non-pole zone
+  ## EPSG code
+  if (y >= 0) {
+    if (y <= 84) {
       epsg <- 32600 + zone
     } else {
-      ## pole zone
       epsg <- 32661
     }
-
   } else {
-
-    ## epsg code for southern hemisphere
-    if (y >= -60) {
-      ## non-pole zone
+    if (y >= -80) {
       epsg <- 32700 + zone
     } else {
-      ## pole zone
       epsg <- 32761
     }
-
   }
 
   return(epsg)
