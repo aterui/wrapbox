@@ -557,7 +557,9 @@ wsd_nested <- function(outlet,
 #'
 #' @export
 
-flow2grid <- function(f_acc, threshold, output) {
+flow2grid <- function(f_acc,
+                      threshold,
+                      output) {
 
   # Use a truly unique temp dir per call (safe across workers)
   temppath <- tempfile(pattern = paste0("strg_", Sys.getpid(), "_"))
