@@ -235,7 +235,7 @@ point2utm <- function(point) {
 #' @export
 
 wsd_unnested <- function(outlet,
-                         id_col,
+                         id_col = NULL,
                          f_dir,
                          str_grid = NULL,
                          snap = TRUE,
@@ -348,7 +348,7 @@ wsd_unnested <- function(outlet,
     sf::st_geometry() %>%
     sf::st_as_sf()
 
-  if (!missing(id_col)) {
+  if (!is.null(id_col)) {
     ## pull id_col as an identifier
     identifier <- outlet %>%
       dplyr::pull(id_col)
