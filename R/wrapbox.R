@@ -562,10 +562,13 @@ flow2grid <- function(f_acc, threshold, output) {
   # Use a truly unique temp dir per call (safe across workers)
   temppath <- tempfile(pattern = paste0("strg_", Sys.getpid(), "_"))
   dir.create(temppath)
+
   on.exit(
     unlink(temppath,
-           recursive = TRUE),
-    add = TRUE
+           recursive = TRUE,
+           force = TRUE),
+    add = TRUE,
+    after = FALSE
   )
 
   fname <- file.path(temppath, "upa.tif")
