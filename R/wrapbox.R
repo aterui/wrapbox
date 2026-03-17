@@ -245,13 +245,18 @@ wsd_unnested <- function(outlet,
 
   message("Saving temporary files...")
 
-  ## setup temporary directory
-  temppath <- tempfile(pattern = "wsd_")
+  ## unique temp dir per call/worker
+  temppath <- tempfile(
+    pattern = paste0("wsd_", Sys.getpid(), "_")
+  )
   dir.create(temppath)
 
   on.exit(
-    unlink(temppath, recursive = TRUE),
-    add = TRUE
+    unlink(temppath,
+           recursive = TRUE,
+           force = TRUE),
+    add = TRUE,
+    after = FALSE
   )
 
   ## setup temporary file names
@@ -292,11 +297,13 @@ wsd_unnested <- function(outlet,
     whitebox::wbt_jenson_snap_pour_points(pour_pts = unname(v_name["outlet"]),
                                           streams = unname(v_name["strg"]),
                                           output = unname(v_name["outlet_snap"]),
-                                          snap_dist = snap_dist)
+                                          snap_dist = snap_dist,
+                                          wd = temppath)
   } else {
     ## w/o snapping
     sf::st_write(outlet,
                  dsn = unname(v_name["outlet_snap"]),
+                 quiet = TRUE,
                  append = FALSE)
   }
 
@@ -307,7 +314,8 @@ wsd_unnested <- function(outlet,
 
   whitebox::wbt_unnest_basins(d8_pntr = unname(v_name["dir"]),
                               pour_pts = unname(v_name["outlet_snap"]),
-                              output = unname(v_name["wsd"]))
+                              output = unname(v_name["wsd"]),
+                              wd = temppath)
 
   # vectorize ---------------------------------------------------------------
 
@@ -322,10 +330,11 @@ wsd_unnested <- function(outlet,
            merge = TRUE,
            as_points = FALSE) %>%
     dplyr::bind_rows() %>%
-    dplyr::mutate(site_id = rowSums(
-      dplyr::across(dplyr::ends_with("tif")), na.rm = TRUE
-    )) %>%
-    dplyr::select("site_id")
+    dplyr::mutate(
+      site_id = rowSums(dplyr::across(dplyr::ends_with("tif")),
+                        na.rm = TRUE)
+    ) %>%
+    dplyr::select(.data$site_id)
 
   sf_wsd <- sf_wsd0 %>%
     dplyr::mutate(area = units::set_units(sf::st_area(sf_wsd0), "km^2")) %>%
@@ -363,9 +372,6 @@ wsd_unnested <- function(outlet,
                       .data$x0,
                       .data$y0)
   }
-
-  ## remove temporary files
-  message("Removing temporary files...")
 
   return(sf_wsd)
 }
