@@ -551,32 +551,31 @@ wsd_nested <- function(outlet,
 #'
 #' @export
 
-flow2grid <- function(f_acc,
-                      threshold,
-                      output) {
+flow2grid <- function(f_acc, threshold, output) {
 
-  ## temporary file names
-  temppath <- tempfile(pattern = "strg_")
+  # Use a truly unique temp dir per call (safe across workers)
+  temppath <- tempfile(pattern = paste0("strg_", Sys.getpid(), "_"))
   dir.create(temppath)
-
   on.exit(
-    unlink(temppath, recursive = TRUE),
+    unlink(temppath,
+           recursive = TRUE),
     add = TRUE
   )
 
-  ## setup temporary file names
   fname <- file.path(temppath, "upa.tif")
 
-  ## write raster input in temporary folder
+  # Write raster from file path, not SpatRaster object (avoids fork issues)
   terra::writeRaster(f_acc,
                      filename = fname,
                      overwrite = TRUE)
 
-  ## stream grids
-  whitebox::wbt_extract_streams(flow_accum = fname,
-                                output = output,
-                                threshold = threshold,
-                                wd = temppath)
+  # Ensure output paths are unique per call (caller's responsibility)
+  whitebox::wbt_extract_streams(
+    flow_accum = fname,
+    output     = output,
+    threshold  = threshold,
+    wd         = temppath
+  )
 
   return(terra::rast(output))
 }
