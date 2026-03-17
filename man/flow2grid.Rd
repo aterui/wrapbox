@@ -9,15 +9,17 @@ flow2grid(f_acc, threshold, output)
 \arguments{
 \item{f_acc}{Flow accumulation raster of class \code{SpatRaster}.}
 
-\item{threshold}{Numeric.
-Threshold value for minimum stream grid.
-The unit inherits from input the flow accumulation layer.}
+\item{threshold}{Numeric. Minimum drainage area threshold for stream
+initiation. The unit inherits from the flow accumulation layer.}
 
-\item{output}{Character.
-File path for output stream grid.}
+\item{output}{Character. File path for the output stream grid raster.}
+}
+\value{
+A stream grid raster of class \code{SpatRaster}.
 }
 \description{
-Convert flow accumulation raster to stream grid
+Extracts a stream grid from a flow accumulation raster by applying a
+minimum drainage area threshold via \code{whitebox::wbt_extract_streams()}.
 }
 \author{
 Akira Terui, \email{hanabi0111@gmail.com}

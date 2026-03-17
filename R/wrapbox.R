@@ -216,16 +216,24 @@ point2utm <- function(point) {
 
 #' Delineate unnested watersheds
 #'
+#' Delineate unnested watersheds for multiple outlet points using a
+#' D8 flow direction raster.
+#'
 #' @param outlet Outlet point layer of class \code{sf}.
 #' @param id_col Column name specifying outlet id.
 #'  This column information will be appended to the output polygon layer.
 #' @param f_dir Flow direction raster of class \code{SpatRaster}.
 #' @param str_grid Stream grid raster of class \code{SpatRaster}.
-#' @param snap Logical.
-#'  Whether snapping of outlet points should be performed.
-#' @param snap_dist Numeric.
-#'  Distance threshold for snapping points to stream grid.
-#'  Measured in the unit of input raster files.
+#'  Required if \code{snap = TRUE}.
+#' @param snap Logical. Whether snapping of outlet points should be performed.
+#'  Defaults to \code{TRUE}.
+#' @param snap_dist Numeric. Distance threshold for snapping points to stream grid.
+#'  Measured in the unit of input raster files. Defaults to \code{5}.
+#'
+#' @return A polygon layer of class \code{sf} with one row per outlet point.
+#'  If \code{id_col} is supplied, the output includes the identifier column and
+#'  coordinates of the original (\code{x0}, \code{y0}) and snapped
+#'  (\code{x}, \code{y}) outlet points.
 #'
 #' @importFrom dplyr %>%
 #' @importFrom rlang .data
@@ -266,11 +274,11 @@ wsd_unnested <- function(outlet,
                         "outlet_snap.shp",
                         "dir.tif",
                         "wsd.tif")) %>%
-    setNames(c("strg",
-               "outlet",
-               "outlet_snap",
-               "dir",
-               "wsd"))
+    stats::setNames(c("strg",
+                      "outlet",
+                      "outlet_snap",
+                      "dir",
+                      "wsd"))
 
   ## write base raster files
   terra::writeRaster(f_dir,
@@ -378,9 +386,17 @@ wsd_unnested <- function(outlet,
 
 #' Delineate nested watersheds
 #'
+#' Delineate nested watersheds for multiple outlet points using a D8 flow
+#' direction raster.
+#'
 #' @inheritParams wsd_unnested
 #'
-#' @importFrom stringr str_detect
+#' @return A named list with:
+#'  \describe{
+#'    \item{watershed}{Polygon layer of class \code{sf}, one row per outlet.}
+#'    \item{outlet}{Snapped outlet points of class \code{sf}.}
+#'  }
+#'
 #' @importFrom dplyr %>%
 #' @importFrom rlang .data
 #'
@@ -418,11 +434,11 @@ wsd_nested <- function(outlet,
                         "outlet_snap.shp",
                         "dir.tif",
                         "wsd.tif")) %>%
-    setNames(c("strg",
-               "outlet",
-               "outlet_snap",
-               "dir",
-               "wsd"))
+    stats::setNames(c("strg",
+                      "outlet",
+                      "outlet_snap",
+                      "dir",
+                      "wsd"))
 
   ## write temporary files
   terra::writeRaster(f_dir,
@@ -528,14 +544,16 @@ wsd_nested <- function(outlet,
 
 #' Convert flow accumulation raster to stream grid
 #'
-#' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
-#' @param threshold Numeric.
-#'  Threshold value for minimum stream grid.
-#'  The unit inherits from input the flow accumulation layer.
-#' @param output Character.
-#'  File path for output stream grid.
+#' Extracts a stream grid from a flow accumulation raster by applying a
+#' minimum drainage area threshold via \code{whitebox::wbt_extract_streams()}.
 #'
-#' @importFrom stringr str_detect
+#' @param f_acc Flow accumulation raster of class \code{SpatRaster}.
+#' @param threshold Numeric. Minimum drainage area threshold for stream
+#'  initiation. The unit inherits from the flow accumulation layer.
+#' @param output Character. File path for the output stream grid raster.
+#'
+#' @return A stream grid raster of class \code{SpatRaster}.
+#'
 #' @importFrom dplyr %>%
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
@@ -578,13 +596,17 @@ flow2grid <- function(f_acc,
 
 #' Convert stream grid to vector stream
 #'
-#' @inheritParams wsd_unnested
-#' @param output Character.
-#'  File path for the output stream vector.
-#' @param set_crs Logical.
-#'  Whether output file should inherit CRS from the input flow direction raster.
+#' Converts a raster stream grid to a vector line layer using
+#' \code{whitebox::wbt_raster_streams_to_vector()}.
 #'
-#' @importFrom stringr str_detect
+#' @inheritParams wsd_unnested
+#' @param output Character. Optional file path to save the output stream vector.
+#'  If \code{NULL} (default), the result is returned in memory only.
+#' @param set_crs Logical. Whether the output should inherit the CRS from
+#'  \code{f_dir}. Defaults to \code{TRUE}.
+#'
+#' @return A vector line layer of class \code{sf}.
+#'
 #' @importFrom dplyr %>%
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
@@ -604,9 +626,9 @@ grid2stream <- function(f_dir,
                      c("dir.tif",
                        "strg.tif",
                        "strv.shp")) %>%
-    setNames(c("dir",
-               "strg",
-               "strv"))
+    stats::setNames(c("dir",
+                      "strg",
+                      "strv"))
 
   on.exit(
     unlink(temppath,

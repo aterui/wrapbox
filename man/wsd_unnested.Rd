@@ -6,16 +6,11 @@
 \usage{
 wsd_unnested(
   outlet,
-  id_col,
+  id_col = NULL,
   f_dir,
   str_grid = NULL,
   snap = TRUE,
-  snap_dist = 5,
-  export = FALSE,
-  output_dir = "watershed",
-  filename = "watershed",
-  file_ext = "gpkg",
-  keep_outlet = FALSE
+  snap_dist = 5
 )
 }
 \arguments{
@@ -26,37 +21,24 @@ This column information will be appended to the output polygon layer.}
 
 \item{f_dir}{Flow direction raster of class \code{SpatRaster}.}
 
-\item{str_grid}{Stream grid raster of class \code{SpatRaster}.}
+\item{str_grid}{Stream grid raster of class \code{SpatRaster}.
+Required if \code{snap = TRUE}.}
 
-\item{snap}{Logical.
-Whether snapping of outlet points should be performed.}
+\item{snap}{Logical. Whether snapping of outlet points should be performed.
+Defaults to \code{TRUE}.}
 
-\item{snap_dist}{Numeric.
-Distance threshold for snapping points to stream grid.
-Measured in the unit of input raster files.}
-
-\item{export}{Logical.
-Whether output polygons should be exported.}
-
-\item{output_dir}{Character.
-Specify a directly name for output.
-Ignored if \code{export = FALSE}.}
-
-\item{filename}{Character.
-Specify a file name of output watershed polygons.
-Ignored if \code{export = FALSE}.}
-
-\item{file_ext}{Character.
-Specify a file extension of output files.
-Either \code{"gpkg"} or \code{"shp"}.
-Ignored if \code{export = FALSE}.}
-
-\item{keep_outlet}{Logical.
-Whether a snapped outlet layer should be exported.
-Ignored if \code{export = FALSE}.}
+\item{snap_dist}{Numeric. Distance threshold for snapping points to stream grid.
+Measured in the unit of input raster files. Defaults to \code{5}.}
+}
+\value{
+A polygon layer of class \code{sf} with one row per outlet point.
+If \code{id_col} is supplied, the output includes the identifier column and
+coordinates of the original (\code{x0}, \code{y0}) and snapped
+(\code{x}, \code{y}) outlet points.
 }
 \description{
-Delineate unnested watersheds
+Delineate unnested watersheds for multiple outlet points using a
+D8 flow direction raster.
 }
 \author{
 Akira Terui, \email{hanabi0111@gmail.com}

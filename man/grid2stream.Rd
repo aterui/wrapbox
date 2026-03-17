@@ -4,21 +4,26 @@
 \alias{grid2stream}
 \title{Convert stream grid to vector stream}
 \usage{
-grid2stream(f_dir, str_grid, output, set_crs = TRUE)
+grid2stream(f_dir, str_grid, output = NULL, set_crs = TRUE)
 }
 \arguments{
 \item{f_dir}{Flow direction raster of class \code{SpatRaster}.}
 
-\item{str_grid}{Stream grid raster of class \code{SpatRaster}.}
+\item{str_grid}{Stream grid raster of class \code{SpatRaster}.
+Required if \code{snap = TRUE}.}
 
-\item{output}{Character.
-File path for output stream vector.}
+\item{output}{Character. Optional file path to save the output stream vector.
+If \code{NULL} (default), the result is returned in memory only.}
 
-\item{set_crs}{Logical.
-Whether output file should inherit CRS from the input flow direction raster.}
+\item{set_crs}{Logical. Whether the output should inherit the CRS from
+\code{f_dir}. Defaults to \code{TRUE}.}
+}
+\value{
+A vector line layer of class \code{sf}.
 }
 \description{
-Convert stream grid to vector stream
+Converts a raster stream grid to a vector line layer using
+\code{whitebox::wbt_raster_streams_to_vector()}.
 }
 \author{
 Akira Terui, \email{hanabi0111@gmail.com}

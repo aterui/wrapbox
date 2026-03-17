@@ -20,4 +20,5 @@ Imports:
   whitebox,
   rlang,
   stringr,
-  units
+  units,
+  stats
