@@ -556,30 +556,29 @@ flow2grid <- function(f_acc,
                       output) {
 
   ## temporary file names
-  temppath <- tempdir()
-  fname <- paste0(temppath,
-                  "\\",
-                  "upa.tif")
+  temppath <- tempfile(pattern = "strg_")
+  dir.create(temppath)
+
+  on.exit(
+    unlink(temppath, recursive = TRUE),
+    add = TRUE
+  )
+
+  ## setup temporary file names
+  fname <- file.path(temppath, "upa.tif")
 
   ## write raster input in temporary folder
   terra::writeRaster(f_acc,
-                     filename = fname[str_detect(fname, "upa")],
+                     filename = fname,
                      overwrite = TRUE)
 
   ## stream grids
-  whitebox::wbt_extract_streams(flow_accum = fname[str_detect(fname, "upa")],
+  whitebox::wbt_extract_streams(flow_accum = fname,
                                 output = output,
-                                threshold = threshold)
+                                threshold = threshold,
+                                wd = temppath)
 
-  strg <- terra::rast(output)
-
-  ## remove temporary files
-  message("Removing temporary files...")
-  files <- list.files(temppath, full.names = TRUE)
-  cl <- call("file.remove", files)
-  suppressWarnings(eval(cl, envir = parent.frame()))
-
-  return(strg)
+  return(terra::rast(output))
 }
 
 #' Convert stream grid to vector stream
