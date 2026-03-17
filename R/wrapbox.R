@@ -593,7 +593,7 @@ flow2grid <- function(f_acc, threshold, output) {
 #'
 #' @inheritParams wsd_unnested
 #' @param output Character.
-#'  File path for output stream vector.
+#'  File path for the output stream vector.
 #' @param set_crs Logical.
 #'  Whether output file should inherit CRS from the input flow direction raster.
 #'
@@ -606,46 +606,59 @@ flow2grid <- function(f_acc, threshold, output) {
 
 grid2stream <- function(f_dir,
                         str_grid,
-                        output,
+                        output = NULL,
                         set_crs = TRUE) {
 
-  ## temporary file names
-  temppath <- tempdir()
-  fname <- paste0(temppath,
-                  "\\",
-                  c("dir.tif", "strg.tif"))
+  ## Use a truly unique temp dir per call (safe across workers)
+  temppath <- tempfile(pattern = paste0("strv_", Sys.getpid(), "_"))
+  dir.create(temppath)
+
+  fname <- file.path(temppath,
+                     c("dir.tif",
+                       "strg.tif",
+                       "strv.shp")) %>%
+    setNames(c("dir",
+               "strg",
+               "strv"))
+
+  on.exit(
+    unlink(temppath,
+           recursive = TRUE,
+           force = TRUE),
+    add = TRUE,
+    after = FALSE
+  )
 
   ## write raster input in temporary folder
   terra::writeRaster(f_dir,
-                     filename = fname[str_detect(fname, "dir")],
+                     filename = unname(fname["dir"]),
                      overwrite = TRUE)
 
   terra::writeRaster(str_grid,
-                     filename = fname[str_detect(fname, "strg")],
+                     filename = unname(fname["strg"]),
                      overwrite = TRUE)
 
   ## stream grids
-  whitebox::wbt_raster_streams_to_vector(streams = fname[str_detect(fname, "strg")],
-                                         d8_pntr = fname[str_detect(fname, "dir")],
-                                         output = output)
+  whitebox::wbt_raster_streams_to_vector(streams = unname(fname["strg"]),
+                                         d8_pntr = unname(fname["dir"]),
+                                         output = unname(fname["strv"]),
+                                         wd = temppath)
 
+  channel <- sf::st_read(unname(fname["strv"]), quiet = TRUE)
+
+  ## inherit CRS from source
   if (set_crs) {
-    sf::st_read(output,
-                quiet = TRUE) %>%
-      sf::st_set_crs(terra::crs(f_dir)) %>%
-      sf::st_write(dsn = output,
-                   append = FALSE,
-                   quiet = TRUE)
+    channel <- sf::st_set_crs(
+      channel,
+      terra::crs(f_dir)
+    )
   }
 
-  channel <- sf::st_read(output,
-                         quiet = TRUE)
-
-  ## remove temporary files
-  message("Removing temporary files...")
-  files <- list.files(temppath, full.names = TRUE)
-  cl <- call("file.remove", files)
-  suppressWarnings(eval(cl, envir = parent.frame()))
+  if (!is.null(output))
+    sf::st_write(channel,
+                 dsn = output,
+                 append = FALSE,
+                 quiet = TRUE)
 
   return(channel)
 }
