@@ -379,13 +379,6 @@ wsd_unnested <- function(outlet,
 #' Delineate nested watersheds
 #'
 #' @inheritParams wsd_unnested
-#' @param id_col Column name specifying outlet id.
-#'  This column information will be appended to the snapped outlet layer.
-#' @param simplify Logical.
-#'  Whether simplify the output polygons.
-#' @param keep Numeric.
-#'  Proportion of vertices kept after polygon simplifications.
-#'  Ignored if \code{simplify = FALSE}
 #'
 #' @importFrom stringr str_detect
 #' @importFrom dplyr %>%
@@ -400,9 +393,7 @@ wsd_nested <- function(outlet,
                        f_dir,
                        str_grid = NULL,
                        snap = TRUE,
-                       snap_dist = 5,
-                       simplify = FALSE,
-                       keep = 0.5) {
+                       snap_dist = 5) {
 
   # temporary files ---------------------------------------------------------
 
@@ -510,23 +501,6 @@ wsd_nested <- function(outlet,
     dplyr::select(-.data$area)
 
   outlet_id <- dplyr::pull(sf_wsd, .data$tifid)
-
-  if (simplify) {
-
-    ## w/ simplification
-    if (!(keep < 1 && keep > 0))
-      stop("'keep' must be greater than 0 and less than 1")
-
-    sf_wsd <- rmapshaper::ms_simplify(sf_wsd,
-                                      keep = keep) %>%
-      sf::st_make_valid()
-
-  } else {
-
-    ## w/o simplification
-    sf_wsd <- sf::st_make_valid(sf_wsd)
-
-  }
 
   outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
     dplyr::group_by(.data$geometry) %>%
