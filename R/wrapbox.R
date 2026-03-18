@@ -249,6 +249,12 @@ wsd_unnested <- function(outlet,
                          snap = TRUE,
                          snap_dist = 5) {
 
+
+  # index outlet ------------------------------------------------------------
+
+  ## this may not be necessary, but just in case
+  outlet <- dplyr::mutate(outlet, idx = dplyr::row_number())
+
   # temporary files ---------------------------------------------------------
 
   message("Saving temporary files...")
@@ -335,8 +341,8 @@ wsd_unnested <- function(outlet,
   ## read snapped outlets, then re-id with unique coordinates
   ## ordered as input outlets
   outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
-    dplyr::select(geometry) %>% # drop FID
-    dplyr::group_by(geometry) %>%
+    dplyr::select(.data$geometry) %>% # drop FID
+    dplyr::group_by(.data$geometry) %>%
     dplyr::mutate(pid = dplyr::cur_group_id()) %>%
     dplyr::ungroup()
 
@@ -372,13 +378,13 @@ wsd_unnested <- function(outlet,
 
   ## subset by selected outlet, then extract coordinates
   ## - merging occurs when outlets are close to each other
-  ## - outlet/oulet_snap is ordered by tifid, which is in order as input
+  ## - 'idx' is original row ID, and 'tifid' should correspond to it
   xy0 <- outlet %>%
-    dplyr::slice(v_tifid) %>%
+    dplyr::filter(idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   xy <- outlet_snap %>%
-    dplyr::slice(v_tifid) %>%
+    dplyr::filter(idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   ## append outlet coordinates
@@ -392,7 +398,7 @@ wsd_unnested <- function(outlet,
   if (!is.null(id_col)) {
 
     v_sid <- outlet %>%
-      dplyr::slice(v_tifid) %>%
+      dplyr::filter(.data$idx %in% v_tifid) %>%
       pull(id_col)
 
     sf_wsd <- sf_wsd %>%
