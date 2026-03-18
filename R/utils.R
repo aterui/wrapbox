@@ -30,9 +30,11 @@ get_tf <- function(data,
 
   bbox_val <- sf::st_bbox(shape)[mode]
 
-  sapply(seq_len(nrow(data)), function(i) {
+  cout <- sapply(seq_len(nrow(data)), function(i) {
     dplyr::between(bbox_val,
                    min(data$min[i], data$max[i]),
                    max(data$min[i], data$max[i]))
   })
+
+  return(cout)
 }
