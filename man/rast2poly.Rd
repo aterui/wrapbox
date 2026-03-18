@@ -13,8 +13,11 @@ rast2poly(x, simplify = TRUE, keep = 0.05)
 Whether output polygons are simplified or not.}
 
 \item{keep}{Numeric.
-Proportion of vertices kept after polygon simplifications.
-Ignored if \code{simplify = FALSE}}
+Proportion of vertices kept after polygon simplification.
+Must be between 0 and 1 (exclusive). Ignored if \code{simplify = FALSE}.}
+}
+\value{
+An \code{sf} object of class \code{MULTIPOLYGON}.
 }
 \description{
 Convert raster to polygon(s)

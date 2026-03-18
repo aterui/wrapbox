@@ -7,10 +7,32 @@
 arc2d8(x)
 }
 \arguments{
-\item{x}{Flow direction raster of class \code{SpatRaster}}
+\item{x}{Flow direction raster of class \code{SpatRaster} in ArcGIS D8
+encoding. Values 247 and 255 (ArcGIS no-data codes) are converted to
+\code{NA}.}
+}
+\value{
+A \code{SpatRaster} of integer type with WhiteboxTools D8 encoding.
 }
 \description{
-Convert ArcGIS flow direction to D8 flow direction
+Reclassifies a flow direction raster from ArcGIS D8 encoding to
+WhiteboxTools D8 (flow pointer) encoding. The two formats use different
+powers-of-2 assignments for the 8 cardinal and intercardinal directions:
+}
+\details{
+\strong{ArcGIS D8:}
+\preformatted{
+ 32  64 128
+ 16   0   1
+  8   4   2
+}
+
+\strong{WhiteboxTools D8:}
+\preformatted{
+ 64 128   1
+ 32   0   2
+ 16   8   4
+}
 }
 \author{
 Akira Terui, \email{hanabi0111@gmail.com}

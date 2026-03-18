@@ -7,17 +7,22 @@
 get_tf(data, shape, mode)
 }
 \arguments{
-\item{data}{Dataframe.
-This object must list the maximum and minimum of coordinates
-(latitude or longitude)}
+\item{data}{Dataframe with columns \code{min} and \code{max} listing
+coordinate ranges (latitude or longitude).}
 
-\item{shape}{Polygon object of class \code{sf}.
-This object defines the extent.}
+\item{shape}{Polygon object of class \code{sf} defining the extent.}
 
-\item{mode}{Character.
-This argument specifies which terminal coordinate of the shape polygon
-should be used. Either \code{xmin, xmax, ymin, ymax}}
+\item{mode}{Character. Which bounding box coordinate of \code{shape}
+to use. One of \code{"xmin"}, \code{"xmax"}, \code{"ymin"}, \code{"ymax"}.}
+}
+\value{
+A logical vector of length \code{nrow(data)}, indicating whether
+the bounding box coordinate falls within each row's \code{min}/\code{max}
+range.
 }
 \description{
 Utility function: Return the terminal cell of a given polygon
+}
+\author{
+Akira Terui, \email{hanabi0111@gmail.com}
 }

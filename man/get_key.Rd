@@ -7,16 +7,21 @@
 get_key(shape)
 }
 \arguments{
-\item{shape}{Polygon object of class \code{sf}.
-This object defines the extent.}
+\item{shape}{Polygon object of class \code{sf} defining the extent.}
+}
+\value{
+A single character string of pipe-separated tile codes,
+e.g. \code{"n30e135|n30e140"}. Suitable for use with
+\code{\link[base]{grep}} or \code{\link[stringr]{str_detect}}.
 }
 \description{
-Return file name keys for MERIT Hydro rasters
+Generates a regex-ready key string identifying all MERIT Hydro raster tiles
+that overlap with a given polygon. Tile codes follow the MERIT Hydro naming
+convention, e.g. \code{"n30e135"} for the tile covering 30–35°N, 135–140°E.
 }
-\section{MERIT Hydro}{
- see https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/
+\references{
+MERIT Hydro: \url{https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/}
 }
-
 \author{
 Akira Terui, \email{hanabi0111@gmail.com}
 }

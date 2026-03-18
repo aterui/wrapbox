@@ -1,9 +1,17 @@
 #' Return file name keys for MERIT Hydro rasters
 #'
+#' Generates a regex-ready key string identifying all MERIT Hydro raster tiles
+#' that overlap with a given polygon. Tile codes follow the MERIT Hydro naming
+#' convention, e.g. \code{"n30e135"} for the tile covering 30–35°N, 135–140°E.
+#'
 #' @inheritParams get_tf
 #'
-#' @section
-#'  MERIT Hydro: see https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/
+#' @return A single character string of pipe-separated tile codes,
+#'  e.g. \code{"n30e135|n30e140"}. Suitable for use with
+#'  \code{\link[base]{grep}} or \code{\link[stringr]{str_detect}}.
+#'
+#' @references
+#'  MERIT Hydro: \url{https://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/}
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
 #'
@@ -73,7 +81,29 @@ get_key <- function(shape) {
 
 #' Convert ArcGIS flow direction to D8 flow direction
 #'
-#' @param x Flow direction raster of class \code{SpatRaster}
+#' Reclassifies a flow direction raster from ArcGIS D8 encoding to
+#' WhiteboxTools D8 (flow pointer) encoding. The two formats use different
+#' powers-of-2 assignments for the 8 cardinal and intercardinal directions:
+#'
+#' \strong{ArcGIS D8:}
+#' \preformatted{
+#'  32  64 128
+#'  16   0   1
+#'   8   4   2
+#' }
+#'
+#' \strong{WhiteboxTools D8:}
+#' \preformatted{
+#'  64 128   1
+#'  32   0   2
+#'  16   8   4
+#' }
+#'
+#' @param x Flow direction raster of class \code{SpatRaster} in ArcGIS D8
+#'  encoding. Values 247 and 255 (ArcGIS no-data codes) are converted to
+#'  \code{NA}.
+#'
+#' @return A \code{SpatRaster} of integer type with WhiteboxTools D8 encoding.
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
 #'
@@ -110,8 +140,12 @@ arc2d8 <- function(x) {
 #' @param simplify Logical.
 #'  Whether output polygons are simplified or not.
 #' @param keep Numeric.
-#'  Proportion of vertices kept after polygon simplifications.
-#'  Ignored if \code{simplify = FALSE}
+#'  Proportion of vertices kept after polygon simplification.
+#'  Must be between 0 and 1 (exclusive). Ignored if \code{simplify = FALSE}.
+#'
+#' @return An \code{sf} object of class \code{MULTIPOLYGON}.
+#'
+#' @importFrom dplyr %>%
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
 #'
@@ -121,8 +155,11 @@ rast2poly <- function(x,
                       simplify = TRUE,
                       keep = 0.05) {
 
-  if (!(keep < 1 && keep > 0))
-    stop("'keep' must be greater than 0 and less than 1")
+  if (!inherits(x, "SpatRaster"))
+    stop("'x' must be a SpatRaster object")
+
+  if (!is.numeric(keep) || length(keep) != 1 || keep <= 0 || keep >= 1)
+    stop("'keep' must be a single numeric value greater than 0 and less than 1")
 
   poly_raw <- stars::st_as_stars(x) %>%
     sf::st_as_sf(merge = TRUE,
@@ -130,8 +167,7 @@ rast2poly <- function(x,
     sf::st_cast(to = "MULTIPOLYGON")
 
   if (simplify) {
-    poly <- rmapshaper::ms_simplify(poly_raw,
-                                    keep = keep)
+    poly <- rmapshaper::ms_simplify(poly_raw, keep = keep)
   } else {
     poly <- poly_raw
   }
