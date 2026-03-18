@@ -536,6 +536,7 @@ wsd_nested <- function(outlet,
 
   outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
     dplyr::select(.data$geometry) %>%
+    dplyr::mutate(idx = dplyr::row_number()) %>%
     dplyr::group_by(.data$geometry) %>%
     dplyr::mutate(pid = dplyr::cur_group_id()) %>%
     dplyr::ungroup()
@@ -558,11 +559,11 @@ wsd_nested <- function(outlet,
   ## - merging occurs when outlets are close to each other
   ## - 'idx' is original row ID, and 'tifid' should correspond to it
   xy0 <- outlet %>%
-    dplyr::filter(idx %in% v_tifid) %>%
+    dplyr::filter(.data$idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   xy <- outlet_snap %>%
-    dplyr::filter(idx %in% v_tifid) %>%
+    dplyr::filter(.data$idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   ## append outlet coordinates
@@ -576,7 +577,7 @@ wsd_nested <- function(outlet,
   if (!is.null(id_col)) {
     ## get unique outlet identifier
     v_sid <- outlet %>%
-      dplyr::filter(idx %in% v_tifid) %>%
+      dplyr::filter(.data$idx %in% v_tifid) %>%
       dplyr::pull(.data$id_col)
 
     sf_wsd <- sf_wsd %>%
