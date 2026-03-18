@@ -1,7 +1,7 @@
 Package: wrapbox
 Type: Package
 Title: Wrapper Package for R Whitebox
-Version: 0.1.1
+Version: 0.2.0
 Author: Akira Terui
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
