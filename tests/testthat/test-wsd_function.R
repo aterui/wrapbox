@@ -11,7 +11,7 @@ test_that("nested and unnested watershed generation works", {
   # ------------------------------------------------------------------
 
   list_spr <- list.files(
-    "tests",
+    testthat::test_path("testdata"),
     recursive = TRUE,
     pattern = "\\.tif$",
     full.names = TRUE
