@@ -395,7 +395,7 @@ wsd_unnested <- function(outlet,
                   y = xy[, 2],
                   x0 = xy0[, 1],
                   y0 = xy0[, 2],
-                  .after = .data$tifid)
+                  .before = .data$geometry)
 
   if (!is.null(id_col)) {
 
@@ -419,11 +419,10 @@ wsd_unnested <- function(outlet,
 #'
 #' @inheritParams wsd_unnested
 #'
-#' @return A named list with:
-#'  \describe{
-#'    \item{watershed}{Polygon layer of class \code{sf}, one row per outlet.}
-#'    \item{outlet}{Snapped outlet points of class \code{sf}.}
-#'  }
+#' @return A polygon layer of class \code{sf} with one row per outlet point.
+#'  If \code{id_col} is supplied, the output includes the identifier column and
+#'  coordinates of the original (\code{x0}, \code{y0}) and snapped
+#'  (\code{x}, \code{y}) outlet points.
 #'
 #' @importFrom dplyr %>%
 #' @importFrom rlang .data
@@ -546,13 +545,17 @@ wsd_nested <- function(outlet,
     stars::st_as_stars() %>%
     sf::st_as_sf(merge = TRUE,
                  as_points = FALSE) %>%
-    dplyr::rename(tifid = .data$wsd.tif)
+    dplyr::rename(tifid = .data$wsd.tif) %>%
+    dplyr::mutate(pid = outlet_snap$pid[.data$tifid])
 
   sf_wsd <- sf_wsd0 %>%
     dplyr::mutate(area = units::set_units(sf::st_area(sf_wsd0), "km^2")) %>%
     dplyr::group_by(.data$tifid) %>%
     dplyr::slice(which.max(.data$area)) %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    dplyr::relocate(.data$pid,
+                    .data$tifid,
+                    .data$area)
 
   v_tifid <- sf_wsd$tifid
 
@@ -573,7 +576,7 @@ wsd_nested <- function(outlet,
                   y = xy[, 2],
                   x0 = xy0[, 1],
                   y0 = xy0[, 2],
-                  .after = .data$tifid)
+                  .before = .data$geometry)
 
   if (!is.null(id_col)) {
     ## get unique outlet identifier
