@@ -341,8 +341,8 @@ wsd_unnested <- function(outlet,
   ## read snapped outlets, then re-id with unique coordinates
   ## ordered as input outlets
   outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
-    dplyr::mutate(idx = dplyr::row_number()) %>%
     dplyr::select(.data$geometry) %>% # drop FID
+    dplyr::mutate(idx = dplyr::row_number()) %>%
     dplyr::group_by(.data$geometry) %>%
     dplyr::mutate(pid = dplyr::cur_group_id()) %>%
     dplyr::ungroup()
