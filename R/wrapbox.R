@@ -400,7 +400,7 @@ wsd_unnested <- function(outlet,
 
     v_sid <- outlet %>%
       dplyr::filter(.data$idx %in% v_tifid) %>%
-      pull(id_col)
+      dplyr::pull(id_col)
 
     sf_wsd <- sf_wsd %>%
       dplyr::mutate(!!id_col := v_sid,
