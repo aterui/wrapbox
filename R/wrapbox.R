@@ -302,11 +302,14 @@ wsd_unnested <- function(outlet,
                        overwrite = TRUE)
 
     message("Snap outlet points to the nearest stream grid...")
-    whitebox::wbt_jenson_snap_pour_points(pour_pts = unname(v_name["outlet"]),
-                                          streams = unname(v_name["strg"]),
-                                          output = unname(v_name["outlet_snap"]),
-                                          snap_dist = snap_dist,
-                                          wd = temppath)
+    whitebox::wbt_jenson_snap_pour_points(
+      pour_pts = unname(v_name["outlet"]),
+      streams = unname(v_name["strg"]),
+      output = unname(v_name["outlet_snap"]),
+      snap_dist = snap_dist,
+      wd = temppath
+    )
+
   } else {
     ## w/o snapping
     sf::st_write(outlet,
@@ -320,14 +323,22 @@ wsd_unnested <- function(outlet,
 
   message("Delineate watersheds...")
 
-  whitebox::wbt_unnest_basins(d8_pntr = unname(v_name["dir"]),
-                              pour_pts = unname(v_name["outlet_snap"]),
-                              output = unname(v_name["wsd"]),
-                              wd = temppath)
+  whitebox::wbt_unnest_basins(
+    d8_pntr = unname(v_name["dir"]),
+    pour_pts = unname(v_name["outlet_snap"]),
+    output = unname(v_name["wsd"]),
+    wd = temppath
+  )
 
   # vectorize ---------------------------------------------------------------
 
   message("Vectorize raster watersheds...")
+
+  outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
+    dplyr::select(geometry) %>%
+    dplyr::group_by(geometry) %>%
+    dplyr::mutate(pid = dplyr::cur_group_id()) %>%
+    dplyr::ungroup()
 
   sf_wsd0 <- list.files(path = temppath,
                         pattern = "wsd.*\\.tif$",
@@ -339,22 +350,19 @@ wsd_unnested <- function(outlet,
            as_points = FALSE) %>%
     dplyr::bind_rows() %>%
     dplyr::mutate(
-      site_id = rowSums(dplyr::across(dplyr::ends_with("tif")),
+      tifid = rowSums(dplyr::across(dplyr::ends_with("tif")),
                         na.rm = TRUE)
     ) %>%
-    dplyr::select(.data$site_id)
+    dplyr::select(.data$tifid) %>%
+    dplyr::mutate(pid = outlet_snap$pid[.data$tifid])
 
   sf_wsd <- sf_wsd0 %>%
     dplyr::mutate(area = units::set_units(sf::st_area(sf_wsd0), "km^2")) %>%
-    dplyr::group_by(.data$site_id) %>%
+    dplyr::group_by(.data$pid) %>%
     dplyr::slice(which.max(.data$area)) %>% # remove duplicates by outlet
     dplyr::ungroup() %>%
-    dplyr::relocate(.data$site_id, .data$area) %>%
-    dplyr::arrange(.data$site_id)
-
-  outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
-    sf::st_geometry() %>%
-    sf::st_as_sf()
+    dplyr::relocate(.data$tifid, .data$area) %>%
+    dplyr::arrange(.data$tifid)
 
   if (!is.null(id_col)) {
     ## pull id_col as an identifier
@@ -366,14 +374,14 @@ wsd_unnested <- function(outlet,
     xy <- sf::st_coordinates(outlet_snap)
 
     ## append point coordinates to polygons
-    site_id_num <- sf_wsd$site_id
+    tifid_num <- sf_wsd$tifid
 
     sf_wsd <- sf_wsd %>%
-      dplyr::mutate(id_col = identifier[site_id_num],
-                    x0 = xy0[site_id_num, 1],
-                    y0 = xy0[site_id_num, 2],
-                    x = xy[site_id_num, 1],
-                    y = xy[site_id_num, 2]) %>%
+      dplyr::mutate(id_col = identifier[tifid_num],
+                    x0 = xy0[tifid_num, 1],
+                    y0 = xy0[tifid_num, 2],
+                    x = xy[tifid_num, 1],
+                    y = xy[tifid_num, 2]) %>%
       dplyr::relocate(.data$id_col,
                       .data$x,
                       .data$y,
