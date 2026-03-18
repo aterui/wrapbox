@@ -289,7 +289,6 @@ wsd_unnested <- function(outlet,
                dsn = unname(v_name["outlet"]),
                append = FALSE)
 
-
   # snapping outlets --------------------------------------------------------
 
   if (snap) {
@@ -318,7 +317,6 @@ wsd_unnested <- function(outlet,
                  append = FALSE)
   }
 
-
   # delineation -------------------------------------------------------------
 
   message("Delineate watersheds...")
@@ -334,12 +332,15 @@ wsd_unnested <- function(outlet,
 
   message("Vectorize raster watersheds...")
 
+  ## read snapped outlets, then re-id with unique coordinates
+  ## ordered as input outlets
   outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
-    dplyr::select(geometry) %>%
+    dplyr::select(geometry) %>% # drop FID
     dplyr::group_by(geometry) %>%
     dplyr::mutate(pid = dplyr::cur_group_id()) %>%
     dplyr::ungroup()
 
+  ## vectorize raster watersheds
   sf_wsd0 <- list.files(path = temppath,
                         pattern = "wsd.*\\.tif$",
                         full.names = TRUE) %>%
@@ -351,42 +352,53 @@ wsd_unnested <- function(outlet,
     dplyr::bind_rows() %>%
     dplyr::mutate(
       tifid = rowSums(dplyr::across(dplyr::ends_with("tif")),
-                        na.rm = TRUE)
+                      na.rm = TRUE)
     ) %>%
     dplyr::select(.data$tifid) %>%
     dplyr::mutate(pid = outlet_snap$pid[.data$tifid])
 
+  ## drop residual polygons, order by tifid (outlet id)
   sf_wsd <- sf_wsd0 %>%
     dplyr::mutate(area = units::set_units(sf::st_area(sf_wsd0), "km^2")) %>%
     dplyr::group_by(.data$pid) %>%
     dplyr::slice(which.max(.data$area)) %>% # remove duplicates by outlet
     dplyr::ungroup() %>%
-    dplyr::relocate(.data$tifid, .data$area) %>%
+    dplyr::relocate(.data$pid,
+                    .data$tifid,
+                    .data$area) %>%
     dplyr::arrange(.data$tifid)
 
+  v_tifid <- sf_wsd$tifid
+
+  ## subset by selected outlet, then extract coordinates
+  ## - merging occurs when outlets are close to each other
+  ## - outlet/oulet_snap is ordered by tifid, which is in order as input
+  xy0 <- outlet %>%
+    dplyr::slice(v_tifid) %>%
+    sf::st_coordinates()
+
+  xy <- outlet_snap %>%
+    dplyr::slice(v_tifid) %>%
+    sf::st_coordinates()
+
+  ## append outlet coordinates
+  sf_wsd <- sf_wsd %>%
+    dplyr::mutate(x = xy[, 1],
+                  y = xy[, 2],
+                  x0 = xy0[, 1],
+                  y0 = xy0[, 2],
+                  .after = .data$tifid)
+
   if (!is.null(id_col)) {
-    ## pull id_col as an identifier
-    identifier <- outlet %>%
-      dplyr::pull(id_col)
 
-    ## pull xy coordinates from original and snapped points
-    xy0 <- sf::st_coordinates(outlet)
-    xy <- sf::st_coordinates(outlet_snap)
-
-    ## append point coordinates to polygons
-    tifid_num <- sf_wsd$tifid
+    v_sid <- outlet %>%
+      dplyr::slice(v_tifid) %>%
+      pull(id_col)
 
     sf_wsd <- sf_wsd %>%
-      dplyr::mutate(id_col = identifier[tifid_num],
-                    x0 = xy0[tifid_num, 1],
-                    y0 = xy0[tifid_num, 2],
-                    x = xy[tifid_num, 1],
-                    y = xy[tifid_num, 2]) %>%
-      dplyr::relocate(.data$id_col,
-                      .data$x,
-                      .data$y,
-                      .data$x0,
-                      .data$y0)
+      dplyr::mutate(!!id_col := v_sid,
+                    .before = .data$tifid)
+
   }
 
   return(sf_wsd)
