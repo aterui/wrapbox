@@ -522,6 +522,12 @@ wsd_nested <- function(outlet,
 
   message("Vectorize raster watersheds...")
 
+  outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
+    dplyr::select(.data$geometry) %>%
+    dplyr::group_by(.data$geometry) %>%
+    dplyr::mutate(pid = dplyr::cur_group_id()) %>%
+    dplyr::ungroup()
+
   sf_wsd0 <- terra::rast(unname(v_name["wsd"])) %>%
     stars::st_as_stars() %>%
     sf::st_as_sf(merge = TRUE,
@@ -532,36 +538,42 @@ wsd_nested <- function(outlet,
     dplyr::mutate(area = sf::st_area(sf_wsd0)) %>%
     dplyr::group_by(.data$tifid) %>%
     dplyr::slice(which.max(.data$area)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(fid = dplyr::row_number()) %>%
-    dplyr::relocate(.data$fid) %>%
-    dplyr::select(-.data$area)
+    dplyr::ungroup()
 
-  outlet_id <- dplyr::pull(sf_wsd, .data$tifid)
+  v_tifid <- sf_wsd$tifid
 
-  outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
-    dplyr::select(.data$geometry) %>%
-    dplyr::group_by(.data$geometry) %>%
-    dplyr::mutate(pid = dplyr::cur_group_id()) %>%
-    dplyr::ungroup() %>%
-    dplyr::relocate(.data$pid)
+  ## subset by selected outlet, then extract coordinates
+  ## - merging occurs when outlets are close to each other
+  ## - outlet/oulet_snap is ordered by tifid, which is in order as input
+  xy0 <- outlet %>%
+    dplyr::slice(v_tifid) %>%
+    sf::st_coordinates()
+
+  xy <- outlet_snap %>%
+    dplyr::slice(v_tifid) %>%
+    sf::st_coordinates()
+
+  ## append outlet coordinates
+  sf_wsd <- sf_wsd %>%
+    dplyr::mutate(x = xy[, 1],
+                  y = xy[, 2],
+                  x0 = xy0[, 1],
+                  y0 = xy0[, 2],
+                  .after = .data$tifid)
 
   if (!is.null(id_col)) {
+    ## get unique outlet identifier
+    v_sid <- outlet %>%
+      dplyr::slice(v_tifid) %>%
+      pull(id_col)
 
-    outlet_snap <- outlet_snap %>%
-      dplyr::mutate(id_col = dplyr::pull(outlet, id_col)) %>%
-      dplyr::relocate(.data$id_col) %>%
-      dplyr::slice(outlet_id)
-
-  } else {
-
-    outlet_snap <- outlet_snap %>%
-      dplyr::slice(outlet_id)
+    sf_wsd <- sf_wsd %>%
+      dplyr::mutate(!!id_col := v_sid,
+                    .before = .data$tifid)
 
   }
 
-  return(list(watershed = sf_wsd,
-              outlet = outlet_snap))
+  return(sf_wsd)
 }
 
 #' Convert flow accumulation raster to stream grid
