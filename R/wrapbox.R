@@ -293,7 +293,8 @@ wsd_unnested <- function(outlet,
 
   sf::st_write(outlet,
                dsn = unname(v_name["outlet"]),
-               append = FALSE)
+               append = FALSE,
+               quiet = TRUE)
 
   # snapping outlets --------------------------------------------------------
 
@@ -548,7 +549,7 @@ wsd_nested <- function(outlet,
     dplyr::rename(tifid = .data$wsd.tif)
 
   sf_wsd <- sf_wsd0 %>%
-    dplyr::mutate(area = sf::st_area(sf_wsd0)) %>%
+    dplyr::mutate(area = units::set_units(sf::st_area(sf_wsd0), "km^2")) %>%
     dplyr::group_by(.data$tifid) %>%
     dplyr::slice(which.max(.data$area)) %>%
     dplyr::ungroup()
@@ -578,7 +579,7 @@ wsd_nested <- function(outlet,
     ## get unique outlet identifier
     v_sid <- outlet %>%
       dplyr::filter(.data$idx %in% v_tifid) %>%
-      dplyr::pull(.data$id_col)
+      dplyr::pull(id_col)
 
     sf_wsd <- sf_wsd %>%
       dplyr::mutate(!!id_col := v_sid,
