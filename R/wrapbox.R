@@ -236,7 +236,7 @@ point2utm <- function(point) {
 #'  (\code{x}, \code{y}) outlet points.
 #'
 #' @importFrom dplyr %>%
-#' @importFrom rlang .data
+#' @importFrom rlang .data :=
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
 #'
@@ -425,7 +425,7 @@ wsd_unnested <- function(outlet,
 #'  (\code{x}, \code{y}) outlet points.
 #'
 #' @importFrom dplyr %>%
-#' @importFrom rlang .data
+#' @importFrom rlang .data :=
 #'
 #' @author Akira Terui, \email{hanabi0111@gmail.com}
 #'
