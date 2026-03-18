@@ -494,7 +494,8 @@ wsd_nested <- function(outlet,
   whitebox::wbt_watershed(
     d8_pntr = unname(v_name["dir"]),
     pour_pts = unname(v_name["outlet_snap"]),
-    output = unname(v_name["wsd"])
+    output = unname(v_name["wsd"]),
+    wd = temppath
   )
 
   # vectorize ---------------------------------------------------------------
@@ -519,6 +520,7 @@ wsd_nested <- function(outlet,
   outlet_id <- dplyr::pull(sf_wsd, .data$tifid)
 
   outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
+    dplyr::select(.data$geometry) %>%
     dplyr::group_by(.data$geometry) %>%
     dplyr::mutate(pid = dplyr::cur_group_id()) %>%
     dplyr::ungroup() %>%
