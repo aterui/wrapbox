@@ -31,11 +31,10 @@ Defaults to \code{TRUE}.}
 Measured in the unit of input raster files. Defaults to \code{5}.}
 }
 \value{
-A named list with:
-\describe{
-\item{watershed}{Polygon layer of class \code{sf}, one row per outlet.}
-\item{outlet}{Snapped outlet points of class \code{sf}.}
-}
+A polygon layer of class \code{sf} with one row per outlet point.
+If \code{id_col} is supplied, the output includes the identifier column and
+coordinates of the original (\code{x0}, \code{y0}) and snapped
+(\code{x}, \code{y}) outlet points.
 }
 \description{
 Delineate nested watersheds for multiple outlet points using a D8 flow
