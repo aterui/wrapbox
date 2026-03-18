@@ -341,6 +341,7 @@ wsd_unnested <- function(outlet,
   ## read snapped outlets, then re-id with unique coordinates
   ## ordered as input outlets
   outlet_snap <- sf::st_read(dsn = unname(v_name["outlet_snap"])) %>%
+    dplyr::mutate(idx = dplyr::row_number()) %>%
     dplyr::select(.data$geometry) %>% # drop FID
     dplyr::group_by(.data$geometry) %>%
     dplyr::mutate(pid = dplyr::cur_group_id()) %>%
@@ -380,11 +381,11 @@ wsd_unnested <- function(outlet,
   ## - merging occurs when outlets are close to each other
   ## - 'idx' is original row ID, and 'tifid' should correspond to it
   xy0 <- outlet %>%
-    dplyr::filter(idx %in% v_tifid) %>%
+    dplyr::filter(.data$idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   xy <- outlet_snap %>%
-    dplyr::filter(idx %in% v_tifid) %>%
+    dplyr::filter(.data$idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   ## append outlet coordinates
@@ -436,6 +437,11 @@ wsd_nested <- function(outlet,
                        str_grid = NULL,
                        snap = TRUE,
                        snap_dist = 5) {
+
+  # index outlet ------------------------------------------------------------
+
+  ## this may not be necessary, but just in case
+  outlet <- dplyr::mutate(outlet, idx = dplyr::row_number())
 
   # temporary files ---------------------------------------------------------
 
@@ -550,13 +556,13 @@ wsd_nested <- function(outlet,
 
   ## subset by selected outlet, then extract coordinates
   ## - merging occurs when outlets are close to each other
-  ## - outlet/oulet_snap is ordered by tifid, which is in order as input
+  ## - 'idx' is original row ID, and 'tifid' should correspond to it
   xy0 <- outlet %>%
-    dplyr::slice(v_tifid) %>%
+    dplyr::filter(idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   xy <- outlet_snap %>%
-    dplyr::slice(v_tifid) %>%
+    dplyr::filter(idx %in% v_tifid) %>%
     sf::st_coordinates()
 
   ## append outlet coordinates
@@ -570,8 +576,8 @@ wsd_nested <- function(outlet,
   if (!is.null(id_col)) {
     ## get unique outlet identifier
     v_sid <- outlet %>%
-      dplyr::slice(v_tifid) %>%
-      pull(id_col)
+      dplyr::filter(idx %in% v_tifid) %>%
+      dplyr::pull(.data$id_col)
 
     sf_wsd <- sf_wsd %>%
       dplyr::mutate(!!id_col := v_sid,
