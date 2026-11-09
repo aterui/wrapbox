@@ -7,26 +7,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
-```{r setup}
-library(wrapbox)
-```
-
----
-title: "Stream Extraction and Watershed Delineation"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Stream Extraction and Watershed Delineation}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -81,7 +61,7 @@ f_dir <- terra::rast(dir_file)
 f_acc <- terra::rast(upa_file)
 ```
 
-Importantly, however, the flow direction layer must be converted to WhiteBox D8 scheme if source data is coded according to ArcGIS scheme; otherwise, the WhiteBox tools will not function properly and return erroneous outputs. `wrapbox::arc2d8()` function performs this conversion.
+Importantly, however, the flow direction layer must be converted to Whitebox D8 scheme if source data is coded according to ArcGIS scheme; otherwise, the Whitebox tools will not function properly and return erroneous outputs. `wrapbox::arc2d8()` function performs this conversion.
 
 ```{r flow-direction-coversion}
 f_dir <- arc2d8(f_dir)
@@ -128,7 +108,7 @@ str_grid <- flow2grid(
 )
 ```
 
-The threshold determines the density of the extracted stream network. Smaller thresholds generally produce denser networks, whereas larger thresholds retain only larger streams. The `output` argument determines the destination of output file – altough we used `tempfile(fileext = ".tif")` for this example, users may specify the appropriate location in their repository.
+The threshold determines the minimum upstream contributing area for each cell to be considered as an operational "stream." Smaller thresholds generally produce denser networks, whereas larger thresholds retain only larger streams. The `output` argument determines the destination of output file – although we used `tempfile(fileext = ".tif")` for this example, users may specify the appropriate location in their repository.
 
 **Note:** The threshold uses the units of the input flow accumulation raster. Adjust it according to the spatial resolution and units of your data.
 
@@ -143,7 +123,7 @@ ggplot() +
 
 Stream grids can be converted into vector lines using `grid2stream()`.
 
-The function uses both the flow direction raster and the extracted stream grid to reconstruct the stream network. Please ensure that the flow direction layer conforms the formatting requirements of WhiteBox tools (see [1. Load example data]).
+The function uses both the flow direction raster and the extracted stream grid to reconstruct the stream network. Please ensure that the flow direction layer conforms the formatting requirements of Whitebox tools (see [1. Load example data]).
 
 ```{r vector-streams}
 
@@ -187,7 +167,7 @@ outlet_file <- system.file(
   package = "wrapbox"
 )
 
-## name each row
+## load data
 outlet <- readRDS(outlet_file)
   
 
@@ -231,7 +211,7 @@ ggplot() +
 
 Nested watersheds (i.e., watersheds are split into multiple polygons at each outlet point) can be delineated using `wsd_nested()`.
 
-```{r nested-watersheds, eval=FALSE}
+```{r nested-watersheds}
 wsd_nested <- wsd_nested(
   outlet = outlet,
   id_col = "id",
@@ -255,14 +235,6 @@ ggplot() +
 ```
 
 # 4. Summary
-
-This vignette demonstrated a basic workflow for extracting stream networks and delineating watersheds using `wrapbox`.
-
-The main workflow can be summarized as follows:
-
-```{r workflow, echo=FALSE, fig.align="center"}
-knitr::include_graphics("workflow.png")
-```
 
 The main functions are:
 

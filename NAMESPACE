@@ -3,7 +3,6 @@
 export(arc2d8)
 export(flow2grid)
 export(get_key)
-export(get_tf)
 export(get_utm)
 export(grid2stream)
 export(point2utm)
@@ -11,5 +10,7 @@ export(rast2poly)
 export(wsd_nested)
 export(wsd_unnested)
 importFrom(dplyr,"%>%")
-importFrom(rlang,":=")
-importFrom(rlang,.data)
+importFrom(rlang,
+  ":=",
+  .data
+)
