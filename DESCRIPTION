@@ -3,7 +3,7 @@ Type: Package
 Title: Wrapper Package for R Whitebox
 Version: 0.2.1
 Author: Akira Terui
-Maintainer: Akira Terui
+Maintainer: Akira Terui <hanabi0111@gmail.com>
 Description: Wrapper package for WhiteboxTools
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -27,3 +27,4 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.0
+URL: https://aterui.github.io/wrapbox/
