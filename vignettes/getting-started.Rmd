@@ -1,0 +1,276 @@
+---
+title: "Getting Started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(wrapbox)
+```
+
+---
+title: "Stream Extraction and Watershed Delineation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Stream Extraction and Watershed Delineation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+# Introduction
+
+The `wrapbox` package provides tools for extracting stream networks and delineating watersheds using flow direction and flow accumulation rasters. This is a wrapper package of `whitebox` (see [this package website](https://whiteboxr.gishub.org/)).
+
+This vignette demonstrates how to:
+
+1.  Extract stream networks as raster grids from flow accumulation data.
+2.  Convert stream grids into vector stream networks.
+3.  Delineate unnested and nested watersheds using outlet locations.
+
+The example data include a D8 flow direction raster (`dir.tif`; flow directions are coded according to [ArcGIS](https://pro.arcgis.com/en/pro-app/3.6/tool-reference/spatial-analyst/flow-direction.htm)) and an upstream area raster (`upa.tif`), both provided in the package. These raster layers were derived from MeritHydro developed by [Yamazaki et al](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019wr024873).
+
+# 1. Load example data
+
+First, load the required packages and example raster layers.
+
+```{r packages, message=FALSE}
+pacman::p_load(
+  tidyverse,
+  wrapbox,
+  sf,
+  terra,
+  tidyterra
+)
+```
+
+The example rasters are distributed in the `raster/` directory. Use `system.file()` to locate them after installing the package.
+
+```{r data}
+## flow direction layer
+dir_file <- system.file(
+  "raster", "dir.tif",
+  package = "wrapbox"
+)
+
+## flow accumulation layer
+upa_file <- system.file(
+  "raster", "upa.tif",
+  package = "wrapbox"
+)
+
+f_dir <- terra::rast(dir_file)
+f_acc <- terra::rast(upa_file)
+```
+
+Importantly, however, the flow direction layer must be converted to WhiteBox D8 scheme if source data is coded according to ArcGIS scheme; otherwise, the WhiteBox tools will not function properly and return erroneous outputs. `wrapbox::arc2d8()` function performs this conversion.
+
+```{r flow-direction-coversion}
+f_dir <- arc2d8(f_dir)
+```
+
+Inspect the raster properties.
+
+```{r inspect}
+f_dir
+f_acc
+```
+
+The flow direction raster (`f_dir`) represents the direction of water flow from each cell, whereas the flow accumulation raster (`f_acc`) represents the upstream contributing area. These layers must use compatible spatial extents, resolutions, and coordinate reference systems.
+
+Visualize the raster layers with `tidyterra::geom_spatraster()` function:
+
+```{r plot-inputs}
+## flow direction
+ggplot() +
+  geom_spatraster(data = f_dir)
+
+## flow accumulation
+ggplot() +
+  geom_spatraster(data = f_acc)
+```
+
+# 2. Extract stream networks
+
+## 2.1. Extract streams as a raster grid
+
+Stream networks can be extracted by applying a threshold to the flow accumulation raster.
+
+The `flow2grid()` function uses WhiteboxTools to identify cells whose upstream contributing area exceeds a specified threshold.
+
+```{r extract-streams}
+# Define the minimum upstream contributing area
+threshold <- 100
+
+# Extract stream grid
+str_grid <- flow2grid(
+  f_acc = f_acc,
+  threshold = threshold,
+  output = tempfile(fileext = ".tif")
+)
+```
+
+The threshold determines the density of the extracted stream network. Smaller thresholds generally produce denser networks, whereas larger thresholds retain only larger streams. The `output` argument determines the destination of output file – altough we used `tempfile(fileext = ".tif")` for this example, users may specify the appropriate location in their repository.
+
+**Note:** The threshold uses the units of the input flow accumulation raster. Adjust it according to the spatial resolution and units of your data.
+
+Visualize the extracted stream grid.
+
+```{r plot-stream-grid}
+ggplot() +
+  geom_spatraster(data = str_grid)
+```
+
+## 2.2. Convert stream grids into vector networks
+
+Stream grids can be converted into vector lines using `grid2stream()`.
+
+The function uses both the flow direction raster and the extracted stream grid to reconstruct the stream network. Please ensure that the flow direction layer conforms the formatting requirements of WhiteBox tools (see [1. Load example data]).
+
+```{r vector-streams}
+
+str_vec <- grid2stream(
+  f_dir = f_dir,
+  str_grid = str_grid
+)
+```
+
+The resulting object is an `sf` line layer, and visualization can be done with `geom_sf()`.
+
+```{r plot-vector-streams}
+ggplot() +
+  geom_sf(data = str_vec)
+```
+
+An optional output path can be supplied to save the vector network.
+
+```{r save-vector, eval=FALSE}
+str_vec <- grid2stream(
+  f_dir = f_dir,
+  str_grid = str_grid,
+  output = "streams.gpkg"
+)
+```
+
+# 3. Delineate watersheds
+
+Watershed delineation requires outlet locations and a flow direction raster.
+
+Outlet locations should be placed on the stream network. By default, `wsd_unnested()` and `wsd_nested()` snap outlet points to the nearest stream cells before delineating watersheds.
+
+## 3.1. Define outlet locations
+
+For demonstration, we use a `sf` layer for outlet points. Like raster data, the example data are distributed in the `vector/` directory. Use `system.file()` to locate them.
+
+```{r outlets}
+## load outlet data file
+outlet_file <- system.file(
+  "vector", "outlet.rds",
+  package = "wrapbox"
+)
+
+## name each row
+outlet <- readRDS(outlet_file)
+  
+
+## inspect
+ggplot() +
+  geom_sf(data = str_vec) +
+  geom_sf(data = outlet,
+          color = "red")
+```
+
+## 3.2. Unnested watershed delineation
+
+The `wsd_unnested()` function delineates independent watersheds for the supplied outlet locations.
+
+```{r unnested-watersheds}
+wsd <- wsd_unnested(
+  outlet = outlet,
+  id_col = "id",
+  f_dir = f_dir,
+  str_grid = str_grid,
+  snap = TRUE,
+  snap_dist = 5
+)
+```
+
+The resulting object is an `sf` polygon layer, with one watershed polygon per outlet. The `snap_dist` argument specifies the maximum distance for snapping outlet locations to the stream network, using the map units of the input raster.
+
+Since the resulting watershed polygons are overlapped with one another, the watershed polygon for the upstream site has deeper color (if `alpha` is less than `1`).
+
+```{r plot-unnested}
+ggplot() +
+  geom_sf(data = wsd,
+          fill = "blue",
+          alpha = 0.1) +
+  geom_sf(data = str_vec) +
+  geom_sf(data = outlet,
+          color = "red")
+```
+
+## 3.3. Nested watershed delineation
+
+Nested watersheds (i.e., watersheds are split into multiple polygons at each outlet point) can be delineated using `wsd_nested()`.
+
+```{r nested-watersheds, eval=FALSE}
+wsd_nested <- wsd_nested(
+  outlet = outlet,
+  id_col = "id",
+  f_dir = f_dir,
+  str_grid = str_grid,
+  snap = TRUE,
+  snap_dist = 5
+)
+```
+
+The resulting watershed polygons represent nested, non-overlapping drainage areas associated with their respective outlet locations. Because the polygons do not overlap, plotting them with transparent fills does not produce any color variation.
+
+```{r plot-nested}
+ggplot() +
+  geom_sf(data = wsd_nested,
+          fill = "blue",
+          alpha = 0.1) +
+  geom_sf(data = str_vec) +
+  geom_sf(data = outlet,
+          color = "red")
+```
+
+# 4. Summary
+
+This vignette demonstrated a basic workflow for extracting stream networks and delineating watersheds using `wrapbox`.
+
+The main workflow can be summarized as follows:
+
+```{r workflow, echo=FALSE, fig.align="center"}
+knitr::include_graphics("workflow.png")
+```
+
+The main functions are:
+
+| Function         | Input                            | Output              |
+|:-----------------|:---------------------------------|:--------------------|
+| `flow2grid()`    | Flow accumulation                | Stream grid         |
+| `grid2stream()`  | Flow direction and stream grid   | Vector streams      |
+| `wsd_unnested()` | Outlet points and flow direction | Unnested watersheds |
+| `wsd_nested()`   | Outlet points and flow direction | Nested watersheds   |
+
+For additional details about function arguments and implementation, see the package reference documentation.
