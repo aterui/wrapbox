@@ -10,9 +10,7 @@
 #'  the bounding box coordinate falls within each row's \code{min}/\code{max}
 #'  range.
 #'
-#' @author Akira Terui, \email{hanabi0111@gmail.com}
-#'
-#' @export
+#' @noRd
 
 get_tf <- function(data,
                    shape,
