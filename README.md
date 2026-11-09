@@ -42,11 +42,11 @@ whitebox::install_whitebox()
 
 ## Example
 
-See **Getting Started** for example.
+See **Articles \> Getting Started** for example.
 
 ## Other utilities
 
-See **References** or use `?function_name` in R to see details and
+See **Reference** or use `?function_name` in R to see details and
 examples for each function.
 
 ## Development
