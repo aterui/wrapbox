@@ -4,7 +4,7 @@
 #' that overlap with a given polygon. Tile codes follow the MERIT Hydro naming
 #' convention, e.g. \code{"n30e135"} for the tile covering 30–35°N, 135–140°E.
 #'
-#' @inheritParams get_tf
+#' @param shape Polygon object of class \code{sf} defining the extent.
 #'
 #' @return A single character string of pipe-separated tile codes,
 #'  e.g. \code{"n30e135|n30e140"}. Suitable for use with
