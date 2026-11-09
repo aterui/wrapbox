@@ -5,3 +5,8 @@ devtools::load_all()
 devtools::check(vignettes=FALSE)
 
 lintr::lint_package()
+
+## packagedown
+usethis::use_pkgdown()
+pkgdown::build_site()
+pkgdown::preview_site()
