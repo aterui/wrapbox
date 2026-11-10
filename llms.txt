@@ -1,0 +1,87 @@
+# wrapbox
+
+# wrapbox
+
+`wrapbox` provides R wrappers and utilities for working with
+hydrological rasters and stream networks using **terra**, **sf**, and
+**WhiteboxTools**. The package includes tools for converting
+flow-direction data, extracting stream networks in raster and vector
+formats, and delineating nested or unnested watersheds from outlet
+locations.
+
+## Installation
+
+Install the development/stable version from GitHub with `remotes`:
+
+``` r
+
+install.packages("remotes")
+
+## development version
+remotes::install_github("aterui/wrapbox")
+
+## version-specific installation; the latest sable version is v0.2.1
+remotes::install_github("aterui/wrapbox@v0.2.1")
+```
+
+Load the package:
+
+``` r
+
+library(wrapbox)
+library(terra)
+library(sf)
+```
+
+The package uses WhiteboxTools through the R package `whitebox`. If
+WhiteboxTools is not yet installed on your computer, install it using:
+
+``` r
+
+install.packages("whitebox")
+whitebox::install_whitebox()
+```
+
+## Example
+
+See **Articles \> Getting Started** for example.
+
+## Other utilities
+
+See **Reference** or use `?function_name` in R to see details and
+examples for each function.
+
+## Development
+
+Bug reports and feature requests are welcome through the [GitHub issue
+tracker](https://github.com/aterui/wrapbox/issues).
+
+# Package index
+
+## All functions
+
+- [`arc2d8()`](https://aterui.github.io/wrapbox/reference/arc2d8.md) :
+  Convert ArcGIS flow direction to D8 flow direction
+- [`flow2grid()`](https://aterui.github.io/wrapbox/reference/flow2grid.md)
+  : Convert flow accumulation raster to stream grid
+- [`get_key()`](https://aterui.github.io/wrapbox/reference/get_key.md) :
+  Return file name keys for MERIT Hydro rasters
+- [`get_utm()`](https://aterui.github.io/wrapbox/reference/get_utm.md) :
+  Return UTM zone (EPSG code) based on geographic coordinates
+- [`grid2stream()`](https://aterui.github.io/wrapbox/reference/grid2stream.md)
+  : Convert stream grid to vector stream
+- [`point2utm()`](https://aterui.github.io/wrapbox/reference/point2utm.md)
+  : Return UTM zone (EPSG code) based on a point layer
+- [`rast2poly()`](https://aterui.github.io/wrapbox/reference/rast2poly.md)
+  : Convert raster to polygon(s)
+- [`wsd_nested()`](https://aterui.github.io/wrapbox/reference/wsd_nested.md)
+  : Delineate nested watersheds
+- [`wsd_unnested()`](https://aterui.github.io/wrapbox/reference/wsd_unnested.md)
+  : Delineate unnested watersheds
+
+# Articles
+
+### All vignettes
+
+- [Getting
+  Started](https://aterui.github.io/wrapbox/articles/getting-started.md):
