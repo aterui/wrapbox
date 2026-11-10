@@ -10,7 +10,13 @@ lintr::lint_package()
 # usethis::use_pkgdown()
 # usethis::create_github_token()
 # gitcreds::gitcreds_set()
-# usethis::use_pkgdown_github_pages()
+usethis::use_pkgdown_github_pages()
 
+# Build the website
 pkgdown::build_site()
+
+# Preview locally (optional)
 pkgdown::preview_site()
+
+# Deploy to GitHub Pages
+pkgdown::deploy_to_branch()
