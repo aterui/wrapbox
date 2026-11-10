@@ -278,7 +278,7 @@ wsd <- wsd_unnested(
 #> Delineate watersheds...
 #> Vectorize raster watersheds...
 #> Reading layer `outlet_snap' from data source 
-#>   `C:\Users\a_terui\AppData\Local\Temp\RtmpQrlGfb\wsd_18276_476417426b02\outlet_snap.shp' 
+#>   `C:\Users\a_terui\AppData\Local\Temp\Rtmp6rknBo\wsd_17928_46087c8772fd\outlet_snap.shp' 
 #>   using driver `ESRI Shapefile'
 #> Simple feature collection with 2 features and 2 fields
 #> Geometry type: POINT
@@ -333,7 +333,7 @@ wsd_nested <- wsd_nested(
 #> Delineate watersheds...
 #> Vectorize raster watersheds...
 #> Reading layer `outlet_snap' from data source 
-#>   `C:\Users\a_terui\AppData\Local\Temp\RtmpQrlGfb\wsd_18276_476433865a24\outlet_snap.shp' 
+#>   `C:\Users\a_terui\AppData\Local\Temp\Rtmp6rknBo\wsd_17928_46086162a9a\outlet_snap.shp' 
 #>   using driver `ESRI Shapefile'
 #> Simple feature collection with 2 features and 2 fields
 #> Geometry type: POINT
